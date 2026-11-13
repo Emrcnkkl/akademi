@@ -1,0 +1,30 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base title="AYT Net Hesaplama | 24 Akademi" description="Ücretsiz AYT net hesaplama. Sayısal, eşit ağırlık, sözel ve dil (YDT) için doğru-yanlış sayılarından netini anında hesapla." page="ayt-net">
+<section class="page-hero"><div class="container">
+  <div class="crumbs"><a href="/">Ana sayfa</a> / <a href="/araclar">YKS Araçları</a> / <span>AYT Net Hesaplama</span></div>
+  <h1>AYT net hesaplama</h1>
+  <p>Alanını seç, testlerdeki doğru ve yanlış sayılarını gir. 4 yanlış 1 doğruyu götürür.</p>
+</div></section>
+<section class="block" style="padding-top:0"><div class="container">
+  <div class="seg" id="alanSeg" style="margin-bottom:1.2rem"><button class="on" data-a="SAY">Sayısal</button><button data-a="EA">Eşit Ağırlık</button><button data-a="SOZ">Sözel</button><button data-a="DIL">Dil (YDT)</button></div>
+  <div class="calc reveal">
+    <div class="calc-in metal-card">
+      <div class="calc-row head"><span>Test</span><span style="text-align:center">Doğru</span><span style="text-align:center">Yanlış</span><span style="text-align:center">Net</span></div>
+      <div id="rows"></div>
+      <div class="row" style="margin-top:1rem"><button class="btn btn-ghost btn-sm" id="reset">Sıfırla</button></div>
+    </div>
+    <div class="calc-out">
+      <small id="outLbl">Toplam AYT neti</small>
+      <div class="big" id="netTop">0</div><span class="of" id="ofMax">/ 80</span>
+      <div class="meter"><i id="netBar"></i></div>
+      <p>Hedef bölümün için kaç net gerektiğini ve oraya nasıl ulaşacağını koçunla birlikte planla.</p>
+      <a href="/#kayit" class="btn btn-accent">Ücretsiz ön görüşme al</a>
+    </div>
+  </div>
+  <div class="card metal-card reveal" style="margin-top:1.2rem"><h3 style="font-size:1.1rem">Hangi alan hangi testleri içerir?</h3>
+    <p class="muted" style="margin:0"><b>Sayısal:</b> Matematik 40, Fizik 14, Kimya 13, Biyoloji 13 · <b>Eşit Ağırlık:</b> Matematik 40, Edebiyat 24, Tarih-1 10, Coğrafya-1 6 · <b>Sözel:</b> Edebiyat 24, Tarih-1 10, Coğrafya-1 6, Tarih-2 11, Coğrafya-2 11, Felsefe Grubu 12, Din Kültürü 6 · <b>Dil:</b> YDT 80 soru.</p></div>
+</div></section>
+<section class="block" style="padding-top:1rem"><div class="container"><div class="sh reveal"><span class="kicker">Diğer araçlar</span><h2 style="font-size:1.8rem">Ücretsiz YKS araçları</h2></div><div class="tools-grid"><a href="/tyt-net" class="tool-card metal-card reveal"><span class="dd-ic">🧮</span><div><b>TYT Net Hesaplama</b><span>Doğru-yanlıştan netini anında hesapla</span></div><span class="go">→</span></a><a href="/yks-sayac" class="tool-card metal-card reveal"><span class="dd-ic">⏳</span><div><b>YKS Sayacı</b><span>Sınava kalan gün, hafta ve saat</span></div><span class="go">→</span></a><a href="/pomodoro" class="tool-card metal-card reveal"><span class="dd-ic">🍅</span><div><b>Pomodoro Zamanlayıcı</b><span>25 dk odak, 5 dk mola</span></div><span class="go">→</span></a></div></div></section>
+</Base>

@@ -1,0 +1,34 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base title="YKS 2027'ye Kaç Gün Kaldı? YKS Sayacı | 24 Akademi" description="YKS 2027 geri sayım sayacı. TYT 19 Haziran, AYT ve YDT 20 Haziran 2027. Kalan gün, hafta, saat ve önemli tarihler." page="yks-sayac">
+<section class="page-hero"><div class="container">
+  <div class="crumbs"><a href="/">Ana sayfa</a> / <a href="/araclar">YKS Araçları</a> / <span>YKS Sayacı</span></div>
+  <h1>YKS 2027'ye kaç gün kaldı?</h1>
+  <p>TYT 19 Haziran 2027 Cumartesi, AYT ve YDT 20 Haziran 2027 Pazar günü yapılacak (ÖSYM 2027 sınav takvimi).</p>
+</div></section>
+<section class="block" style="padding-top:0"><div class="container">
+  <div class="seg" id="hedefSeg" style="margin-bottom:1.2rem"><button class="on" data-t="2027-06-19T10:15:00+03:00">TYT · 19 Haziran</button><button data-t="2027-06-20T10:15:00+03:00">AYT · 20 Haziran</button><button data-t="2027-06-20T15:45:00+03:00">YDT · 20 Haziran</button></div>
+  <div class="big-cd reveal">
+    <div class="metal-card"><b id="d">—</b><span>Gün</span></div>
+    <div class="metal-card"><b id="h">—</b><span>Saat</span></div>
+    <div class="metal-card"><b id="m">—</b><span>Dakika</span></div>
+    <div class="metal-card"><b id="s">—</b><span>Saniye</span></div>
+  </div>
+  <div class="grid-2" style="gap:1.2rem;margin-top:1.2rem;align-items:start">
+    <div class="card metal-card reveal">
+      <h3 style="font-size:1.2rem">Kalan çalışma süren</h3>
+      <div class="field"><label for="saat">Günde kaç saat çalışıyorsun?</label><input type="range" id="saat" min="1" max="14" value="6" /></div>
+      <p style="font-size:1.05rem;margin:0"><b id="saatOut">6 saat</b> × <b id="gunOut">—</b> gün = <b id="toplam" style="color:var(--brand);font-size:1.4rem">—</b> saat</p>
+      <p class="muted small" style="margin:.6rem 0 0"><span id="hafta">—</span> hafta, yani yaklaşık <span id="deneme">—</span> deneme hafta sonu kaldı.</p>
+    </div>
+    <div class="reveal">
+      <h3 style="font-size:1.2rem">Önemli tarihler</h3>
+      <div class="timeline" id="tl"></div>
+      <p class="muted small" style="margin:.8rem 0 0">Kaynak: ÖSYM 2027 sınav takvimi. Değişiklikler için osym.gov.tr'yi takip et.</p>
+    </div>
+  </div>
+  <div style="margin-top:1.5rem"><div class="side-cta reveal"><h3>Kalan her haftayı planlayalım.</h3><p>Koçun, kalan süreye göre haftalık programını yazar ve her hafta güncellenir.</p><a href="/#kayit" class="btn btn-accent" style="width:100%">Ücretsiz ön görüşme al</a></div></div>
+</div></section>
+<section class="block" style="padding-top:1rem"><div class="container"><div class="sh reveal"><span class="kicker">Diğer araçlar</span><h2 style="font-size:1.8rem">Ücretsiz YKS araçları</h2></div><div class="tools-grid"><a href="/tyt-net" class="tool-card metal-card reveal"><span class="dd-ic">🧮</span><div><b>TYT Net Hesaplama</b><span>Doğru-yanlıştan netini anında hesapla</span></div><span class="go">→</span></a><a href="/ayt-net" class="tool-card metal-card reveal"><span class="dd-ic">📐</span><div><b>AYT Net Hesaplama</b><span>Sayısal, EA, sözel ve dil için</span></div><span class="go">→</span></a><a href="/pomodoro" class="tool-card metal-card reveal"><span class="dd-ic">🍅</span><div><b>Pomodoro Zamanlayıcı</b><span>25 dk odak, 5 dk mola</span></div><span class="go">→</span></a></div></div></section>
+</Base>

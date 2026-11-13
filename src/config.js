@@ -40,3 +40,11 @@ export const firebaseConfig = {
   appId: "1:1062206754627:web:1b899b2c003679263de9f6",
   measurementId: "G-D812QCG7YX",
 };
+
+// Ücretsiz YKS araçları (menü, footer ve araçlar sayfası buradan okur)
+export const ARACLAR = [
+  { href: "/tyt-net", key: "tyt-net", ic: "🧮", ad: "TYT Net Hesaplama", ac: "Doğru-yanlıştan netini anında hesapla", uzun: "Türkçe, sosyal, matematik ve fen doğru-yanlışlarından toplam netini hesapla." },
+  { href: "/ayt-net", key: "ayt-net", ic: "📐", ad: "AYT Net Hesaplama", ac: "Sayısal, EA, sözel ve dil için", uzun: "Alanını seç; sayısal, eşit ağırlık, sözel veya dil netini hesapla." },
+  { href: "/yks-sayac", key: "yks-sayac", ic: "⏳", ad: "YKS Sayacı", ac: "Sınava kalan gün, hafta ve saat", uzun: "YKS 2027'ye kalan gün, hafta ve saat; önemli tarihler." },
+  { href: "/pomodoro", key: "pomodoro", ic: "🍅", ad: "Pomodoro Zamanlayıcı", ac: "25 dk odak, 5 dk mola", uzun: "25 dakika odak, 5 dakika mola. Ders çalışırken açık bırak." },
+];

@@ -1,0 +1,33 @@
+---
+import { ARACLAR } from "../config.js";
+const { page = "" } = Astro.props;
+const on = (k) => (page === k ? "active" : "");
+const isTool = ARACLAR.some((a) => a.key === page) || page === "araclar";
+---
+<div id="site-header" transition:persist="site-header">
+  <div class="topbar"><div class="container"><span class="dot"></span>
+    <span><b id="tbDays">—</b> gün sonra YKS. Ön görüşme ücretsiz.</span><a href="/#kayit">Hemen başla →</a></div></div>
+  <nav class="nav" id="nav"><div class="container">
+    <a href="/" class="logo"><img src="/assets/logo-24-sm.png" alt="24 Akademi" width="80" height="71" /></a>
+    <div class="nav-links" id="navLinks">
+      <a href="/" data-v="home" class={on("home")}>Ana sayfa</a>
+      <a href="/koclar" data-v="koclar" class={on("koclar")}>Koçlarımız</a>
+      <div class:list={["dd", { active: isTool }]} id="ddTools">
+        <button class="dd-btn" aria-expanded="false" aria-haspopup="true">YKS Araçları <span class="chev">▾</span></button>
+        <div class="dd-menu" role="menu">
+          {ARACLAR.map((a) => (
+            <a role="menuitem" href={a.href} data-v={a.key} class={on(a.key)}><span class="dd-ic">{a.ic}</span><span><b>{a.ad}</b><small>{a.ac}</small></span></a>
+          ))}
+          <a role="menuitem" href="/araclar" data-v="araclar" class="dd-all">Tüm araçlar →</a>
+        </div>
+      </div>
+      <a href="/#fiyat">Fiyat</a>
+      <a href="/hakkimizda" data-v="hakkimizda" class={on("hakkimizda")}>Hakkımızda</a>
+      <a href="/sss" data-v="sss" class={on("sss")}>SSS</a>
+      <a href="/iletisim" data-v="iletisim" class={on("iletisim")}>İletişim</a>
+      <a href="/portal" class="btn btn-ghost btn-sm nav-login" data-astro-reload>Giriş</a>
+      <a href="/#kayit" class="btn btn-accent btn-sm">Ön kayıt</a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menüyü aç" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div></nav>
+</div>

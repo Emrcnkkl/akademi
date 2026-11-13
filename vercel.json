@@ -1,61 +1,9 @@
 {
+  "framework": "astro",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "cleanUrls": true,
   "headers": [
-    {
-      "source": "/(admin|portal)(.*)",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex"
-        }
-      ]
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/koclar",
-      "destination": "/#/koclar",
-      "permanent": true
-    },
-    {
-      "source": "/araclar",
-      "destination": "/#/araclar",
-      "permanent": true
-    },
-    {
-      "source": "/tyt-net",
-      "destination": "/#/tyt-net",
-      "permanent": true
-    },
-    {
-      "source": "/ayt-net",
-      "destination": "/#/ayt-net",
-      "permanent": true
-    },
-    {
-      "source": "/yks-sayac",
-      "destination": "/#/yks-sayac",
-      "permanent": true
-    },
-    {
-      "source": "/pomodoro",
-      "destination": "/#/pomodoro",
-      "permanent": true
-    },
-    {
-      "source": "/hakkimizda",
-      "destination": "/#/hakkimizda",
-      "permanent": true
-    },
-    {
-      "source": "/sss",
-      "destination": "/#/sss",
-      "permanent": true
-    },
-    {
-      "source": "/iletisim",
-      "destination": "/#/iletisim",
-      "permanent": true
-    }
+    { "source": "/(admin|portal)(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] }
   ]
 }

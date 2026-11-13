@@ -1,10 +1,11 @@
-import { auth, db, secondaryAuth } from "./firebase.js";
+import { db } from "./fb.js";
+import { auth, secondaryAuth } from "./fb-auth.js";
 import {
   onAuthStateChanged, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+} from "firebase/auth";
 import {
   collection, query, orderBy, getDocs, getDoc, doc, updateDoc, deleteDoc, serverTimestamp, writeBatch, deleteField,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "firebase/firestore";
 import { $, $$, esc, fillBrand, toast, openModal, tsStr, trDate, ALANLAR, randomPassword } from "./ui.js";
 
 fillBrand();
@@ -24,10 +25,10 @@ $$("#aTabs button").forEach((b) => b.addEventListener("click", () => { $$("#aTab
 $("#newUserBtn").onclick = () => userModal(null, {});
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "portal.html"; return; }
+  if (!user) { location.href = "/portal"; return; }
   try {
     const role = await getDoc(doc(db, "roles", user.uid));
-    if (!role.exists() || role.data().role !== "admin") { location.href = "portal.html"; return; }
+    if (!role.exists() || role.data().role !== "admin") { location.href = "/portal"; return; }
     const me = await getDoc(doc(db, "users", user.uid));
     const ad = me.exists() ? me.data().ad : user.email;
     $("#meName").textContent = ad; $("#meAvatar").textContent = initials(ad);

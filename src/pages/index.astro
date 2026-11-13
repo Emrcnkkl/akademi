@@ -1,0 +1,317 @@
+---
+import Base from "../layouts/Base.astro";
+import CoachCards from "../components/CoachCards.astro";
+import { BRAND } from "../config.js";
+const jsonld = { "@context": "https://schema.org", "@type": "EducationalOrganization", name: "24 Akademi", description: "Derece yapmış üniversite öğrencilerinden birebir YKS koçluğu", url: Astro.site.href, logo: new URL("/assets/logo-24.png", Astro.site).href, sameAs: ["https://instagram.com/yirmidortakademi"] };
+---
+<Base title="24 Akademi | Derece Öğrencilerinden Birebir YKS Koçluğu" description="YKS'de derece yapmış üniversite öğrencilerinden birebir, denetimli YKS koçluğu. Haftalık program, deneme analizi, net takibi ve veli bilgilendirmesi. Ön görüşme ücretsiz." page="home" jsonld={jsonld}>
+<!-- ============ HERO ============ -->
+<header class="hero2">
+  <div class="container">
+    <div>
+      <span class="eyebrow">● YKS 2027 kayıtları açık · Kontenjan sınırlı</span>
+      <h1>Bu sınavı <span class="red">kazananlarla<svg viewBox="0 0 300 20" preserveAspectRatio="none"><path d="M2 14 C 80 4, 200 4, 298 12" stroke="#9b0000" stroke-width="5" fill="none" stroke-linecap="round"/></svg></span> hazırlan.</h1>
+      <p class="lead">Koçların, YKS'de derece yapmış üniversite öğrencileri. Her hafta programını yazarlar, denemelerini seninle analiz ederler. Eksik konunu da gerektiğinde birebir dersle kapatırsın.</p>
+      <div class="hero-cta">
+        <a href="#kayit" class="btn btn-accent">Ücretsiz ön görüşme al</a>
+        <a href="#net" class="btn btn-ghost">Netini hesapla</a>
+      </div>
+      <div class="trust"><span>Taahhüt yok</span><span>Koçunu sen seç</span><span>Haftalık birebir görüşme</span></div>
+    </div>
+
+    <div class="mock-wrap" aria-hidden="true">
+      <div class="float metal-card float-coach"><span class="av">MT</span><div><b>Koçun: Mert</b><small>Boğaziçi · EA-398</small></div></div>
+      <div class="mock metal-card">
+        <div class="mock-head">
+          <div class="who"><span class="av">AY</span><div><b>Bu hafta</b><small>Öğrenci paneli · örnek</small></div></div>
+          <div class="ring" style="--p:62">%62</div>
+        </div>
+        <div class="mock-days"><span class="done">Pzt</span><span class="done">Sal</span><span class="on">Çar</span><span>Per</span><span>Cum</span><span>Cmt</span><span>Paz</span></div>
+        <div class="mtask done"><span class="cb">✓</span><span class="tt">Türev · 60 soru</span><span class="tag">AYT Mat</span></div>
+        <div class="mtask done"><span class="cb">✓</span><span class="tt">Paragraf · 40 soru</span><span class="tag">TYT Türkçe</span></div>
+        <div class="mtask"><span class="cb"></span><span class="tt">Mol kavramı tekrar</span><span class="tag">Kimya</span></div>
+        <div class="mtask"><span class="cb"></span><span class="tt">TYT deneme + analiz</span><span class="tag">Cumartesi</span></div>
+      </div>
+      <div class="float float-net"><small>Son TYT neti</small><b>84,5</b><em>▲ +6,25</em></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ GERİ SAYIM ============ -->
+<section class="countband">
+  <div class="container">
+    <div class="inner">
+      <div>
+        <h3>YKS 2027'ye kalan süre</h3>
+        <p>TYT 19 Haziran 2027, AYT/YDT 20 Haziran 2027 (ÖSYM takvimi). Her hafta önemli.</p>
+      </div>
+      <div class="cd" id="cd"><div><b id="cdD">—</b><span>Gün</span></div><div><b id="cdH">—</b><span>Saat</span></div><div><b id="cdM">—</b><span>Dakika</span></div><div><b id="cdS">—</b><span>Saniye</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NASIL ÇALIŞIR ============ -->
+<section class="block" id="nasil">
+  <div class="container">
+    <div class="sh reveal"><span class="kicker">Nasıl çalışır</span><h2>Ölçülen, yazılı ve takip edilen bir süreç.</h2><p>Koçluk sadece motivasyon konuşması değil. Her hafta neyi, ne kadar yaptığın belli.</p></div>
+    <div class="steps2">
+      <div class="step2 metal-card reveal"><span class="num" style="color:var(--brand)">01</span><h3>Ücretsiz ön görüşme</h3><p>Hedefini, seviyeni ve çalışma alışkanlığını konuşuruz. Sana uygun koçu birlikte seçeriz.</p></div>
+      <div class="step2 metal-card reveal"><span class="num" style="color:var(--ink)">02</span><h3>Kişiye özel program</h3><p>Koçun her hafta günlük görevlerini panele yazar: hangi konu, kaç soru, hangi kaynak.</p></div>
+      <div class="step2 metal-card reveal"><span class="num" style="color:var(--ink)">03</span><h3>Haftalık birebir görüşme</h3><p>Denemelerin analiz edilir, eksiklerin çıkarılır, program bir sonraki haftaya göre güncellenir.</p></div>
+      <div class="step2 metal-card reveal"><span class="num" style="color:var(--brand)">04</span><h3>Ölç ve kapat</h3><p>Netlerin grafikte. Takıldığın konuyu alanında derece yapmış bir hocadan birebir ders alarak kapatırsın.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BİR HAFTAN ============ -->
+<section class="block" style="padding-top:0">
+  <div class="container">
+    <div class="sh reveal"><span class="kicker">Örnek hafta</span><h2>24 Akademi'de bir haftan nasıl geçer?</h2><p>Her gün ne yapacağını bilirsin. Her hafta koçunla durumu değerlendirirsin.</p></div>
+    <div class="week2">
+      <div class="wd metal-card hl reveal"><span class="d">Pazartesi</span><span class="i">🗓️</span><b>Yeni program panelde</b><p>Koçun haftanın görevlerini yazmış olur.</p></div>
+      <div class="wd metal-card reveal"><span class="d">Salı</span><span class="i">✅</span><b>Görevleri işaretle</b><p>Bitirdiğini işaretle, takıldığın yere not bırak.</p></div>
+      <div class="wd metal-card reveal"><span class="d">Çarşamba</span><span class="i">💬</span><b>Ara kontrol</b><p>Koçun notlarına bakar, mesajla yönlendirir.</p></div>
+      <div class="wd metal-card reveal"><span class="d">Perşembe</span><span class="i">📚</span><b>Eksik konu dersi</b><p>Gerekirse alanında uzman bir hocadan birebir ders.</p></div>
+      <div class="wd metal-card reveal"><span class="d">Cuma</span><span class="i">🔁</span><b>Tekrar günü</b><p>Hafta içi konuların kısa tekrarı.</p></div>
+      <div class="wd metal-card red reveal"><span class="d">Cumartesi</span><span class="i">📝</span><b>Deneme</b><p>Netlerini panele gir, grafiğin güncellensin.</p></div>
+      <div class="wd metal-card hl reveal"><span class="d">Pazar</span><span class="i">🎯</span><b>Birebir görüşme</b><p>Analiz, değerlendirme ve yeni haftanın planı.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PANEL TANITIMI ============ -->
+<section class="block" id="panel" style="padding-top:0">
+  <div class="container showcase">
+    <div class="reveal">
+      <span class="kicker">Panel</span>
+      <h2 style="font-size:clamp(1.9rem,3.6vw,2.6rem)">Her şey tek ekranda. Kimse "kaç soru çözdün?" diye sormak zorunda kalmaz.</h2>
+      <div class="sc-tabs" id="scTabs">
+        <button class="sc-tab on" data-p="ogr"><b>Öğrenci</b><span>Günlük görevler, not bırakma, deneme girişi ve net grafiği.</span></button>
+        <button class="sc-tab" data-p="koc"><b>Koç</b><span>Tüm öğrencilerin tamamlama oranı, program yazma, görüşme notları.</span></button>
+        <button class="sc-tab" data-p="veli"><b>Veli</b><span>Haftalık gelişim özeti. Ne yapıldı, nerede eksik var, net nasıl gidiyor.</span></button>
+      </div>
+    </div>
+    <div class="sc-screen metal-card reveal" aria-hidden="true">
+      <div class="sc-bar"><i></i><i></i><i></i></div>
+      <div class="sc-pane on" data-p="ogr">
+        <div class="mini-stats"><div><b>%62</b><span>Bu hafta</span></div><div><b>84,5</b><span>Son TYT</span></div><div><b>41,75</b><span>Son AYT</span></div></div>
+        <svg viewBox="0 0 400 130" style="width:100%;height:auto;margin-bottom:.6rem">
+          <polyline points="10,110 75,96 140,100 205,78 270,64 335,52 390,34" fill="none" stroke="#9b0000" stroke-width="3.5" stroke-linejoin="round"/>
+          <g fill="#fff" stroke="#9b0000" stroke-width="2.5"><circle cx="10" cy="110" r="4.5"/><circle cx="75" cy="96" r="4.5"/><circle cx="140" cy="100" r="4.5"/><circle cx="205" cy="78" r="4.5"/><circle cx="270" cy="64" r="4.5"/><circle cx="335" cy="52" r="4.5"/><circle cx="390" cy="34" r="4.5"/></g>
+          <text x="390" y="22" text-anchor="end" font-size="12" font-weight="800" fill="#12172e">84,5</text>
+        </svg>
+        <div class="mtask done"><span class="cb">✓</span><span class="tt">Türev · 60 soru</span><span class="tag">Pzt</span></div>
+        <div class="mtask"><span class="cb"></span><span class="tt">Paragraf · 40 soru</span><span class="tag">💬 süre yetmedi</span></div>
+      </div>
+      <div class="sc-pane" data-p="koc">
+        <div class="mini-stats"><div><b>8</b><span>Öğrenci</span></div><div><b>%74</b><span>Ort. tamamlama</span></div><div><b>3</b><span>Yeni not</span></div></div>
+        <div class="mini-row"><b>Ayşe Y. · SAY</b><span><span class="bar"><i style="width:62%"></i></span> %62</span></div>
+        <div class="mini-row"><b>Can D. · EA</b><span><span class="bar"><i style="width:100%"></i></span> %100</span></div>
+        <div class="mini-row"><b>Zeynep K. · SAY</b><span><span class="bar"><i style="width:45%;background:#c27a00"></i></span> %45</span></div>
+        <div class="mini-row"><b>Emre T. · SÖZ</b><span><span class="bar"><i style="width:80%"></i></span> %80</span></div>
+        <div class="mini-row"><span class="muted">+ Geçen haftayı kopyala · Görev ekle</span><span class="badge err">Program</span></div>
+      </div>
+      <div class="sc-pane" data-p="veli">
+        <div class="report">
+          <h5>Haftalık gelişim özeti · Ayşe</h5>
+          <div class="mini-row"><span>Görev tamamlama</span><b>%86 (24/28)</b></div>
+          <div class="mini-row"><span>Bu haftaki TYT</span><b>84,5 ▲ 6,25</b></div>
+          <div class="mini-row"><span>Güçlü</span><b>Türev, paragraf</b></div>
+          <div class="mini-row"><span>Odak</span><b>Kimya: mol, Fizik: kuvvet</b></div>
+          <div class="mini-row"><span>Koç notu</span><b>Süre yönetimi iyileşti 👏</b></div>
+        </div>
+        <p class="muted small" style="margin:.8rem 0 0">Veliler bu özeti her hafta WhatsApp'tan alır.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NEDEN BİZ ============ -->
+<section class="block" style="padding-top:0">
+  <div class="container">
+    <div class="sh reveal"><span class="kicker">Farkımız</span><h2>Koçluk platformu çok. Biz en çok şikâyet edilenleri baştan çözdük.</h2></div>
+    <div class="features">
+      <div class="feature metal-card reveal"><div class="f-icon">🎓</div><div><h3>Eğitimli ve denetimli koçlar</h3><p>Her koçumuz başlamadan önce koçluk eğitimimizden geçer. Ayrıca bir kıdemli koç, programları düzenli olarak kontrol eder.</p></div></div>
+      <div class="feature metal-card reveal"><div class="f-icon">🔄</div><div><h3>Uyuşamazsan koçunu değiştir</h3><p>Koçunla iletişimin tutmazsa tek mesajla yeni bir koçla eşleştiririz.</p></div></div>
+      <div class="feature metal-card reveal"><div class="f-icon">📚</div><div><h3>Koçluk + birebir ders</h3><p>Koçun eksik konunu tespit eder. O dersten derece yapmış bir hocadan, uygun fiyatla birebir çalışırsın.</p></div></div>
+      <div class="feature metal-card reveal"><div class="f-icon">🤝</div><div><h3>Şeffaf ve taahhütsüz</h3><p>4 haftalık dönemler var, gizli ücret yok. Devam etmek istemezsen yenilemezsin. İptal tek mesaj.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KARŞILAŞTIRMA ============ -->
+<section class="block" style="padding-top:0">
+  <div class="container">
+    <div class="sh center reveal"><span class="kicker">Karşılaştır</span><h2>Dershane, özel ders, koçluk… Hangisi sana uygun?</h2><p>Hepsinin yeri var. Biz eksik kalan parçaları birleştiriyoruz.</p></div>
+    <div class="compare metal-card table-wrap reveal">
+      <table>
+        <thead><tr><th></th><th>Dershane</th><th>Özel ders</th><th>Klasik koçluk</th><th class="us">24 Akademi</th></tr></thead>
+        <tbody>
+          <tr><td>Kişiye özel haftalık program</td><td class="no">✕</td><td class="mid">Kısmen</td><td class="yes">✓</td><td class="us yes">✓</td></tr>
+          <tr><td>Günlük görev takibi</td><td class="no">✕</td><td class="no">✕</td><td class="mid">Kısmen</td><td class="us yes">✓ Panelde</td></tr>
+          <tr><td>Konu anlatımı</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✕</td><td class="us yes">✓ Gerektiğinde</td></tr>
+          <tr><td>YKS'de derece yapmış rehber</td><td class="no">✕</td><td class="mid">Bazen</td><td class="mid">Bazen</td><td class="us yes">✓ Her zaman</td></tr>
+          <tr><td>Deneme analizi ve net grafiği</td><td class="mid">Kısmen</td><td class="no">✕</td><td class="mid">Kısmen</td><td class="us yes">✓</td></tr>
+          <tr><td>Veli bilgilendirme</td><td class="mid">Kısmen</td><td class="no">✕</td><td class="mid">Kısmen</td><td class="us yes">✓ Haftalık</td></tr>
+          <tr><td>Esnek saat, her yerden</td><td class="no">✕</td><td class="mid">Kısmen</td><td class="yes">✓</td><td class="us yes">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KOÇLAR ============ -->
+<section class="block" id="koclar" style="padding-top:0">
+  <div class="container">
+    <div class="spread sh reveal" style="max-width:none">
+      <div><span class="kicker">Koçlarımız</span><h2>Bu yoldan geçtiler. Şimdi seninle yürüyorlar.</h2></div>
+      <a href="/koclar" class="btn btn-ghost btn-sm">Tüm koçlar →</a>
+    </div>
+    <CoachCards id="coachGrid" filterId="coachFilter" limit={4} />
+  </div>
+</section>
+
+<!-- ============ YKS ARAÇLARI ============ -->
+<section class="block" id="arac-ozet" style="padding-top:0">
+  <div class="container">
+    <div class="spread sh reveal" style="max-width:none">
+      <div><span class="kicker">Ücretsiz araçlar</span><h2>YKS araçları</h2><p>Kayıt gerekmeden kullan.</p></div>
+      <a href="/araclar" class="btn btn-ghost btn-sm">Tüm araçlar →</a>
+    </div>
+    <div class="tools-grid">
+      <a href="/tyt-net" class="tool-card metal-card reveal"><span class="dd-ic">🧮</span><div><b>TYT Net Hesaplama</b><span>Doğru-yanlıştan netini anında hesapla</span></div><span class="go">→</span></a>
+      <a href="/ayt-net" class="tool-card metal-card reveal"><span class="dd-ic">📐</span><div><b>AYT Net Hesaplama</b><span>Sayısal, EA, sözel ve dil için</span></div><span class="go">→</span></a>
+      <a href="/yks-sayac" class="tool-card metal-card reveal"><span class="dd-ic">⏳</span><div><b>YKS Sayacı</b><span>Sınava kalan gün, hafta ve saat</span></div><span class="go">→</span></a>
+      <a href="/pomodoro" class="tool-card metal-card reveal"><span class="dd-ic">🍅</span><div><b>Pomodoro Zamanlayıcı</b><span>25 dk odak, 5 dk mola</span></div><span class="go">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VELİLER ============ -->
+<section class="block" id="veli" style="padding-top:0">
+  <div class="container parents">
+    <div class="reveal">
+      <span class="kicker">Veliler için</span>
+      <h2 style="font-size:clamp(1.9rem,3.6vw,2.6rem)">Çocuğunuzun ne yaptığını tahmin etmek zorunda değilsiniz.</h2>
+      <div class="plist" style="margin-top:1.4rem">
+        <div class="pitem metal-card"><span class="ic">📊</span><div><b>Haftalık gelişim özeti</b><span>Görev tamamlama oranı, deneme netleri, güçlü ve eksik konular.</span></div></div>
+        <div class="pitem metal-card"><span class="ic">🛡️</span><div><b>Güvenli ve denetimli</b><span>Koçlarımız mülakat ve eğitimden geçer. Görüşmeler platform üzerinden takip edilir.</span></div></div>
+        <div class="pitem metal-card"><span class="ic">💳</span><div><b>Dershaneye göre çok daha uygun</b><span>Yıllık peşin ödeme yok. 4 haftalık dönemler var, istediğiniz zaman bırakabilirsiniz.</span></div></div>
+      </div>
+    </div>
+    <div class="wa-report reveal" aria-hidden="true">
+      <div class="wa-head"><img src="assets/favicon.png" alt=""><div><b>24 Akademi</b><div class="muted small">Haftalık rapor · örnek</div></div></div>
+      <div class="wa-msg">Merhaba 👋 Ayşe'nin bu haftaki özeti:<br><br>✅ Görevler: <b>24/28 (%86)</b><br>📝 TYT deneme: <b>84,5 net (▲6,25)</b><br>💪 Güçlü: Türev, paragraf<br>🎯 Odak: Kimya – mol<br><br>Koç notu: Süre yönetimi belirgin şekilde iyileşti. Bu hafta fen ağırlıklı ilerliyoruz.<span class="t">Pazar 20:14 ✓✓</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FİYAT ============ -->
+<section class="block dark" id="fiyat">
+  <div class="container">
+    <div class="sh reveal"><span class="kicker" style="color:#ff8a8a">Fiyat</span><h2>Basit fiyat. Taahhüt yok.</h2><p>4 haftalık dönemler halinde ödersin, istediğin zaman bırakırsın.</p></div>
+    <div class="pricing">
+      <div class="price reveal">
+        <span class="badge ok tag">En popüler</span>
+        <h3>Birebir Koçluk</h3>
+        <div><span class="amt">{BRAND.baslangicFiyat}</span> <span class="per">/ 4 hafta</span></div>
+        <ul>
+          <li>Alanında derece yapmış koç</li>
+          <li>Haftada 1 birebir görüntülü görüşme</li>
+          <li>Günlük görev programı (panelde)</li>
+          <li>Deneme analizi ve net grafiği</li>
+          <li>Hafta içi mesajla soru-cevap</li>
+          <li>Velilere haftalık özet</li>
+        </ul>
+        <a href="#kayit" class="btn btn-primary" style="width:100%">Ücretsiz ön görüşme al</a>
+      </div>
+      <div class="price soon reveal">
+        <span class="badge warn tag">Yakında</span>
+        <h3>Koçluk + Özel Ders</h3>
+        <div><span class="amt">Paket</span> <span class="per">/ ihtiyaca göre</span></div>
+        <ul>
+          <li>Birebir Koçluk'taki her şey</li>
+          <li>Eksik konular için birebir ders</li>
+          <li>Ders öncesi ve sonrası koç kontrolü</li>
+          <li>Aylık detaylı gelişim raporu</li>
+        </ul>
+        <a href="#kayit" class="btn btn-ghost" style="width:100%;color:#fff;border-color:rgba(255,255,255,.3)">Açılınca haber ver</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÖN KAYIT ============ -->
+<section class="block" id="kayit">
+  <div class="container form-split">
+    <div class="reveal">
+      <span class="kicker">Ön kayıt</span>
+      <h2 style="font-size:clamp(1.9rem,3.6vw,2.6rem)">Ücretsiz ön görüşme</h2>
+      <p class="muted" style="font-size:1.05rem">Formu doldur, 24 saat içinde WhatsApp'tan dönelim. Hiçbir ödeme veya taahhüt yok.</p>
+      <ul class="bullets">
+        <li>Mevcut durumunu ve hedefini konuşuruz</li>
+        <li>Sana uygun koçu birlikte seçeriz</li>
+        <li>Veliler de doldurabilir</li>
+      </ul>
+    </div>
+    <div class="card metal-card reveal">
+      <form id="studentForm" novalidate>
+        <div class="field"><label>Formu dolduran</label>
+          <div class="seg" id="kimSeg"><button type="button" class="on" data-v="ogrenci">Öğrenci</button><button type="button" data-v="veli">Veli</button></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label for="s_ad">Öğrencinin adı soyadı *</label><input id="s_ad" required maxlength="80" autocomplete="name" /></div>
+          <div class="field"><label for="s_tel">Telefon (WhatsApp) *</label><input id="s_tel" type="tel" required maxlength="20" placeholder="05xx xxx xx xx" autocomplete="tel" /></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label for="s_sinif">Durum *</label>
+            <select id="s_sinif" required><option value="">Seç</option><option>10. sınıf</option><option>11. sınıf</option><option>12. sınıf</option><option>Mezun</option></select></div>
+          <div class="field"><label for="s_alan">Alan *</label>
+            <select id="s_alan" required><option value="">Seç</option><option value="SAY">Sayısal</option><option value="EA">Eşit Ağırlık</option><option value="SOZ">Sözel</option><option value="DIL">Dil</option><option value="BELIRSIZ">Henüz karar vermedim</option></select></div>
+        </div>
+        <div class="field"><label for="s_email">E-posta</label><input id="s_email" type="email" maxlength="120" autocomplete="email" /></div>
+        <div class="field"><label for="s_hedef">Hedef / not</label><textarea id="s_hedef" maxlength="600" placeholder="Örn. son TYT netim 70, hedefim İTÜ Bilgisayar"></textarea></div>
+        <label class="check"><input type="checkbox" id="s_kvkk" required /> <span><a href="/kvkk" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum. Benimle iletişime geçilmesini kabul ediyorum. 18 yaş altıysam velimin bilgisi dahilindedir.</span></label>
+        <button class="btn btn-accent" style="width:100%" type="submit">Ön görüşme talep et</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KOÇ OL (kısa) ============ -->
+<section class="block" style="padding-top:0">
+  <div class="container">
+    <div class="countband"><div class="inner reveal" style="grid-template-columns:1fr auto">
+      <div><h3>Derece yaptın mı? Koçumuz ol.</h3><p>Esnek, tamamen online, öğrenci sayısına göre artan kazanç. Koçluk eğitimi bizden.</p></div>
+      <a href="/koclar#koc-ol" class="btn btn-accent">Koç başvurusu yap →</a>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ SSS ============ -->
+<section class="block" id="sss" style="padding-top:0">
+  <div class="container">
+    <div class="spread sh reveal" style="max-width:780px"><div><span class="kicker">SSS</span><h2>Sık sorulanlar</h2></div><a href="/sss" class="btn btn-ghost btn-sm">Tüm sorular →</a></div>
+    <div class="faq reveal" id="faq">
+      <details><summary>Koçluk ders anlatımı içeriyor mu?</summary><p>Koçluk; programını, takibini ve stratejini kapsar. Konu anlatımı gerekirse, alanında derece yapmış bir hocamızdan birebir ders ayrıca alınabilir.</p></details>
+      <details><summary>Koçlarınız kimler?</summary><p>YKS'de derece yapmış, iyi üniversitelerde okuyan öğrenciler. Her koç mülakat ve koçluk eğitimimizden geçer. Kıdemli koçlarımız da programları düzenli olarak kontrol eder.</p></details>
+      <details><summary>Ödeme ve iptal nasıl?</summary><p>4 haftalık dönemler halinde ödeme yapılır. Taahhüt yoktur. Bir sonraki dönemi istemezsen yenilemezsin, bu kadar.</p></details>
+      <details><summary>Veli olarak süreci takip edebilir miyim?</summary><p>Evet. Görev tamamlama oranı, deneme netleri ve koç notlarından oluşan haftalık bir özet paylaşıyoruz.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FİNAL CTA ============ -->
+<section class="block" style="padding-top:0">
+  <div class="container">
+    <div class="final reveal">
+      <h2>Hazırlığın, bu sınavı kazananlarla.</h2>
+      <p>İlk görüşme ücretsiz ve taahhüt yok. Hedefini konuşalım, sana uygun koçu birlikte seçelim.</p>
+      <div class="row" style="justify-content:center">
+        <a href="#kayit" class="btn btn-accent">Ücretsiz ön görüşme al</a>
+        <a href={`https://wa.me/${BRAND.whatsapp}`} target="_blank" rel="noopener" class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.3)">WhatsApp'tan yaz</a>
+      </div>
+    </div>
+  </div>
+</section>
+</Base>

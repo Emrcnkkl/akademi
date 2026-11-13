@@ -1,25 +1,14 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex" />
-  <title>Portal | 24 Akademi</title>
-  <link rel="icon" href="assets/favicon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
-  <link rel="stylesheet" href="assets/style.css" />
-</head>
-<body>
-
-<!-- Yükleniyor -->
+---
+import Panel from "../layouts/Panel.astro";
+---
+<Panel title="Portal | 24 Akademi">
+{/* Yükleniyor */}
 <div id="loading" class="login-wrap"><div class="muted">Yükleniyor…</div></div>
 
-<!-- Giriş -->
+{/* Giriş */}
 <div id="loginView" class="login-wrap hidden">
   <div class="card login-card">
-    <a href="index.html" class="logo"><img src="assets/logo-24-sm.png" alt="24 Akademi" style="height:64px" /></a>
+    <a href="/" class="logo"><img src="/assets/logo-24-sm.png" alt="24 Akademi" style="height:64px" /></a>
     <h2 style="font-size:1.5rem">Panele giriş</h2>
     <p class="muted small" style="margin-top:-.3rem">Öğrenci, koç ve yöneticiler için.</p>
     <form id="loginForm">
@@ -29,19 +18,19 @@
     </form>
     <div class="spread" style="margin-top:1rem">
       <button class="btn btn-ghost btn-sm" id="forgotBtn" type="button">Şifremi unuttum</button>
-      <a href="index.html" class="small">← Ana sayfa</a>
+      <a href="/" class="small">← Ana sayfa</a>
     </div>
     <p class="muted small" style="margin-top:1.2rem">Hesabın yok mu? Hesaplar ön görüşmeden sonra ekibimiz tarafından açılır.</p>
   </div>
 </div>
 
-<!-- Uygulama -->
+{/* Uygulama */}
 <div id="appView" class="hidden">
   <header class="app-top">
     <div class="container">
-      <a href="index.html" class="logo"><img src="assets/logo-24-sm.png" alt="24 Akademi" style="height:40px" /></a>
+      <a href="/" class="logo"><img src="/assets/logo-24-sm.png" alt="24 Akademi" style="height:40px" /></a>
       <div class="user-chip">
-        <a id="adminLink" href="admin.html" class="btn btn-ghost btn-sm hidden">Admin paneli</a>
+        <a id="adminLink" href="/admin" class="btn btn-ghost btn-sm hidden">Admin paneli</a>
         <span class="avatar" id="meAvatar"></span>
         <div><b id="meName"></b><div class="muted small" id="meRole"></div></div>
         <button class="btn btn-ghost btn-sm" id="logoutBtn">Çıkış</button>
@@ -50,7 +39,7 @@
   </header>
   <main class="app-main"><div class="container" id="root"></div></main>
 </div>
-
-<script type="module" src="assets/portal.js"></script>
-</body>
-</html>
+</Panel>
+<script>
+  import "../scripts/portal.js";
+</script>
