@@ -11,8 +11,5 @@
   "dependencies": {
     "astro": "^7.4.12",
     "firebase": "^13.3.0"
-  },
-  "engines": {
-    "node": "22.x"
   }
 }
