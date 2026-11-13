@@ -21,6 +21,7 @@ const header = `
 <nav class="nav" id="nav"><div class="container">
   <a href="index.html" class="logo"><img src="assets/logo-24.png" alt="24 Akademi" /></a>
   <div class="nav-links" id="navLinks">
+    <a href="index.html" class="${on("home")}">Ana sayfa</a>
     <a href="koclar.html" class="${on("koclar")}">Koçlarımız</a>
     <div class="dd ${isTool ? "active" : ""}" id="ddTools">
       <button class="dd-btn" aria-expanded="false" aria-haspopup="true">YKS Araçları <span class="chev">▾</span></button>
