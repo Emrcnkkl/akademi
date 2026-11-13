@@ -230,3 +230,15 @@
   .wa-float { bottom: 5rem; }
   .foot2 .cols { grid-template-columns: 1fr; }
 }
+
+/* koç kartı ekleri */
+.coach-photo { position: relative; }
+.coach-chip { position: absolute; top: .9rem; left: .9rem; background: rgba(255,255,255,.92); color: var(--ink); font-size: .72rem; font-weight: 800; padding: .3rem .65rem; border-radius: 99px; }
+.coach-ornek { position: absolute; top: .9rem; right: .9rem; background: rgba(18,23,46,.55); color: #fff; font-size: .66rem; font-weight: 700; padding: .25rem .55rem; border-radius: 99px; backdrop-filter: blur(4px); }
+.coach-photo::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.18), transparent 60%); pointer-events: none; }
+.coach { transition: transform .25s; }
+.coach:hover { transform: translateY(-4px); }
+@media (max-width: 640px) {
+  .coaches { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 70%; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 0 .8rem 12px; }
+  .coach { scroll-snap-align: start; }
+}

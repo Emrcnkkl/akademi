@@ -5,7 +5,7 @@ import {
 import {
   collection, query, orderBy, getDocs, getDoc, doc, updateDoc, deleteDoc, serverTimestamp, writeBatch, deleteField,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { $, $$, esc, fillBrand, toast, openModal, tsStr, ALANLAR, randomPassword } from "./ui.js";
+import { $, $$, esc, fillBrand, toast, openModal, tsStr, trDate, ALANLAR, randomPassword } from "./ui.js";
 
 fillBrand();
 const ROL_ADI = { ogrenci: "Öğrenci", koc: "Koç", admin: "Yönetici" };
@@ -14,7 +14,8 @@ const docs = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 const initials = (ad = "") => ad.split(" ").filter(Boolean).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 const alanAdi = (a) => ALANLAR[a] || (a === "BELIRSIZ" ? "Belirsiz" : a || "-");
 
-let users = [], ogrBas = [], menBas = [], tab = "genel";
+let users = [], ogrBas = [], menBas = [], raporlar = [], tab = "genel";
+const waLink = (tel) => { let t = String(tel || "").replace(/\D/g, ""); if (t.startsWith("0")) t = "9" + t; if (t.length === 10) t = "90" + t; return `https://wa.me/${t}`; };
 const koclar = () => users.filter((u) => u.rol === "koc" && u.aktif !== false);
 const ogrenciSayisi = (kocId) => users.filter((u) => u.rol === "ogrenci" && u.kocId === kocId && u.aktif !== false).length;
 
@@ -36,11 +37,15 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 async function loadAll() {
-  const [u, o, m] = await Promise.all([
+  const [u, o, m, r] = await Promise.all([
     getDocs(collection(db, "users")),
     getDocs(query(collection(db, "ogrenciBasvurulari"), orderBy("createdAt", "desc"))),
     getDocs(query(collection(db, "mentorBasvurulari"), orderBy("createdAt", "desc"))),
+    getDocs(collection(db, "veliRaporlari")),
   ]);
+  raporlar = docs(r).sort((a, b) => (b.hafta || "").localeCompare(a.hafta || "") || (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+  const nr = raporlar.filter((x) => x.durum === "bekliyor").length;
+  $("#cntRap").textContent = nr || ""; $("#cntRap").classList.toggle("hidden", !nr);
   users = docs(u).sort((a, b) => (a.ad || "").localeCompare(b.ad || "", "tr"));
   ogrBas = docs(o); menBas = docs(m);
   const no = ogrBas.filter((x) => x.durum === "yeni").length, nm = menBas.filter((x) => x.durum === "yeni").length;
@@ -54,6 +59,7 @@ function draw() {
   if (tab === "genel") drawGenel(body);
   else if (tab === "ogrBas") drawBasvuru(body, "ogrenciBasvurulari", ogrBas, "ogrenci");
   else if (tab === "mentorBas") drawBasvuru(body, "mentorBasvurulari", menBas, "koc");
+  else if (tab === "rapor") drawRaporlar(body);
   else drawUsers(body);
 }
 
@@ -131,6 +137,49 @@ function drawBasvuru(body, col, list, hedefRol) {
         : { ad: b.ad, email: b.email, telefon: b.telefon, universite: b.universite, bolum: b.bolum, alan: b.alan, siralama: b.siralama };
       userModal(null, pre, hedefRol, { col, id: b.id });
     }));
+  };
+  render();
+}
+
+// ============ VELİ RAPORLARI ============
+function drawRaporlar(body) {
+  let filtre = body.dataset.rf || "bekliyor";
+  const render = () => {
+    const rows = raporlar.filter((r) => filtre === "hepsi" || r.durum === filtre);
+    body.innerHTML = `<div class="spread" style="margin-bottom:1rem"><div class="seg" id="rfSeg">
+        ${[["bekliyor", "Gönderilecek"], ["gonderildi", "Gönderildi"], ["hepsi", "Hepsi"]].map(([k, v]) => `<button data-f="${k}" class="${filtre === k ? "on" : ""}">${v}</button>`).join("")}</div>
+        <span class="muted small">Koçlar hazırlar, sen düzenleyip veliye WhatsApp'tan gönderirsin.</span></div>
+      ${rows.length ? `<div class="grid-2" style="gap:1rem;align-items:start">${rows.map((r) => {
+        const ogr = users.find((u) => u.id === r.ogrenciId) || {}, koc = users.find((u) => u.id === r.kocId) || {};
+        const tel = ogr.veliTelefon;
+        return `<div class="card">
+          <div class="spread"><div><b>${esc(ogr.ad || "?")}</b><div class="muted small">Koç: ${esc(koc.ad || "?")} · Hafta: ${esc(trDate(r.hafta))} haftası</div></div>
+            ${r.durum === "gonderildi" ? `<span class="badge ok">Gönderildi</span>` : `<span class="badge warn">Bekliyor</span>`}</div>
+          <textarea data-metin="${r.id}" style="min-height:200px;font-size:.86rem;margin:.8rem 0" ${r.durum === "gonderildi" ? "readonly" : ""}>${esc(r.metin)}</textarea>
+          <div class="row">
+            ${tel ? `<a class="btn btn-accent btn-sm" data-wa="${r.id}" target="_blank" rel="noopener" href="#">WhatsApp'ta aç</a>` : `<span class="badge err">Veli telefonu yok</span><button class="btn btn-ghost btn-sm" data-telekle="${r.ogrenciId}">Telefon ekle</button>`}
+            <button class="btn btn-ghost btn-sm" data-kopya="${r.id}">Kopyala</button>
+            ${r.durum !== "gonderildi" ? `<button class="btn btn-primary btn-sm" data-gonderildi="${r.id}" style="margin-left:auto">Gönderildi ✓</button>`
+              : `<span class="muted small" style="margin-left:auto">${tsStr(r.gonderildiAt)}</span>`}
+          </div></div>`;
+      }).join("")}</div>` : `<div class="card empty">${filtre === "bekliyor" ? "Gönderilmeyi bekleyen rapor yok." : "Kayıt yok."}</div>`}`;
+    const metin = (id) => $(`[data-metin="${id}"]`, body).value;
+    $$("#rfSeg button", body).forEach((b) => (b.onclick = () => { filtre = b.dataset.f; body.dataset.rf = filtre; render(); }));
+    $$("[data-wa]", body).forEach((a) => {
+      const r = raporlar.find((x) => x.id === a.dataset.wa), tel = users.find((u) => u.id === r.ogrenciId)?.veliTelefon;
+      const upd = () => (a.href = `${waLink(tel)}?text=${encodeURIComponent(metin(r.id))}`);
+      upd(); a.addEventListener("mouseenter", upd); a.addEventListener("focus", upd); a.addEventListener("touchstart", upd, { passive: true });
+    });
+    $$("[data-kopya]", body).forEach((b) => (b.onclick = async () => {
+      try { await navigator.clipboard.writeText(metin(b.dataset.kopya)); toast("Kopyalandı."); } catch { toast("Kopyalanamadı.", "err"); }
+    }));
+    $$("[data-gonderildi]", body).forEach((b) => (b.onclick = async () => {
+      try {
+        await updateDoc(doc(db, "veliRaporlari", b.dataset.gonderildi), { durum: "gonderildi", metin: metin(b.dataset.gonderildi), gonderildiAt: serverTimestamp(), gonderen: auth.currentUser.uid });
+        toast("Gönderildi olarak işaretlendi."); await loadAll(); drawRaporlar(body);
+      } catch (err) { console.error(err); toast("Güncellenemedi.", "err"); }
+    }));
+    $$("[data-telekle]", body).forEach((b) => (b.onclick = () => { const u = users.find((x) => x.id === b.dataset.telekle); if (u) userModal(u, u); }));
   };
   render();
 }

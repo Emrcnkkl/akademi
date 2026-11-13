@@ -76,6 +76,24 @@ service cloud.firestore {
         || (isKoc() && isActive() && resource.data.kocId == request.auth.uid && (request.method == 'delete' || (unchanged('kocId') && unchanged('ogrenciId'))));
     }
 
+    // ---------- haftalık veli raporları (koç hazırlar → admin veliye gönderir) ----------
+    // belge ID: {ogrenciId}_{haftaBaşı}
+    match /veliRaporlari/{id} {
+      allow read: if isAdmin() || (isKoc() && isActive() && (resource == null || resource.data.kocId == request.auth.uid));
+      allow create: if isAdmin()
+        || (isKoc() && isActive() && request.resource.data.kocId == request.auth.uid
+            && kocunOgrencisi(request.resource.data.ogrenciId)
+            && id == request.resource.data.ogrenciId + '_' + request.resource.data.hafta
+            && request.resource.data.durum == 'bekliyor'
+            && request.resource.data.metin is string && request.resource.data.metin.size() <= 3000);
+      // koç, admin göndermeden önce raporunu güncelleyebilir
+      allow update: if isAdmin()
+        || (isKoc() && isActive() && resource.data.kocId == request.auth.uid && resource.data.durum == 'bekliyor'
+            && request.resource.data.durum == 'bekliyor' && unchanged('kocId') && unchanged('ogrenciId') && unchanged('hafta')
+            && request.resource.data.metin is string && request.resource.data.metin.size() <= 3000);
+      allow delete: if isAdmin();
+    }
+
     // ---------- ana sayfa başvuruları (herkes oluşturabilir, sadece admin görür) ----------
     function str(v, max) { return v is string && v.size() <= max; }
 

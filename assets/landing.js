@@ -44,8 +44,10 @@ function drawCoaches(alan = "") {
   const list = KOCLAR.filter((k) => !alan || k.alan === alan);
   $("#coachGrid").innerHTML = list.length ? list.map((k) => {
     const ini = k.ad.split(" ").map((p) => p[0]).join("").slice(0, 2);
+    const alanAd = { SAY: "Sayısal", EA: "Eşit Ağırlık", SOZ: "Sözel", DIL: "Dil" }[k.alan] || "";
     return `<div class="coach reveal in">
-      <div class="coach-photo">${k.foto ? `<img src="${esc(k.foto)}" alt="${esc(k.ad)}" loading="lazy">` : `<span class="coach-ini">${esc(ini)}</span>`}</div>
+      <div class="coach-photo">${k.foto ? `<img src="${esc(k.foto)}" alt="${esc(k.ad)}" loading="lazy">` : `<span class="coach-ini">${esc(ini)}</span>`}
+        <span class="coach-chip">${esc(alanAd)}</span>${k.ornek ? `<span class="coach-ornek">Örnek profil</span>` : ""}</div>
       <div class="coach-tag"><b>${esc(k.ad)}</b><span class="coach-school">${esc(k.okul)}</span><span class="coach-rank">${esc(k.derece)}</span></div></div>`;
   }).join("") : `<div class="card empty" style="grid-column:1/-1">Bu alandaki koçlarımız yakında burada. Ön görüşmede sana uygun koçu birlikte buluyoruz.</div>`;
 }

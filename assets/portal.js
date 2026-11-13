@@ -3,11 +3,11 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  collection, query, where, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch,
+  collection, query, where, getDocs, getDoc, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   $, $$, esc, fillBrand, toast, iso, monday, addDays, GUNLER, GUN_KISA, trDate, openModal,
-  ALANLAR, DERSLER, GOREV_TUR, DERS_LISTESI, lineChart,
+  ALANLAR, DERSLER, GOREV_TUR, DERS_LISTESI, lineChart, tsStr,
 } from "./ui.js";
 
 fillBrand();
@@ -307,7 +307,7 @@ async function CoachPanel(me) {
         body.innerHTML = `<div class="spread" style="margin-bottom:1rem">
             <div class="week-nav"><button class="btn btn-ghost btn-sm" id="prevW">←</button><b>${weekHeader(weekStart)}</b><button class="btn btn-ghost btn-sm" id="nextW">→</button></div>
             <div class="row"><span class="badge ${pct >= 80 ? "ok" : pct >= 50 ? "warn" : "gray"}">%${pct} tamamlandı</span>
-              <button class="btn btn-ghost btn-sm" id="copyW">Geçen haftayı kopyala</button><button class="btn btn-primary btn-sm" id="veliR">📲 Veli raporu</button><button class="btn btn-accent btn-sm" id="addT">+ Görev</button></div></div>
+              <button class="btn btn-ghost btn-sm" id="copyW">Geçen haftayı kopyala</button><button class="btn btn-primary btn-sm" id="veliR">📝 Veli raporu hazırla</button><button class="btn btn-accent btn-sm" id="addT">+ Görev</button></div></div>
           <div id="weekEl"></div>`;
         renderWeek($("#weekEl"), list, weekStart, "koc");
         $("#prevW").onclick = () => { weekStart = addDays(weekStart, -7); drawTab(st); };
@@ -390,23 +390,29 @@ async function CoachPanel(me) {
     const guclu = dersler.filter((d) => list.filter((t) => t.ders === d).every((t) => t.tamam));
     const odak = dersler.filter((d) => !guclu.includes(d) || list.some((t) => t.ders === d && t.ogrenciNotu));
     const ilkAd = (st.ad || "").split(" ")[0];
-    const hedefTel = st.veliTelefon || "";
+    const hafta = iso(weekStart);
+    const raporRef = doc(db, "veliRaporlari", `${st.id}_${hafta}`);
+    let mevcut = null;
+    try { const r = await getDoc(raporRef); if (r.exists()) mevcut = r.data(); } catch (e) { console.warn(e); }
+    const kilitli = mevcut?.durum === "gonderildi";
+    const durumHtml = !mevcut ? ""
+      : kilitli ? `<div class="badge ok" style="margin-bottom:.8rem">✓ Bu rapor ${esc(mevcut.gonderildiAt ? tsStr(mevcut.gonderildiAt) : "")} veliye gönderildi</div>`
+      : `<div class="badge warn" style="margin-bottom:.8rem">Admin onayı bekliyor · son kayıt ${esc(tsStr(mevcut.updatedAt))}</div>`;
 
     const m = openModal(`<h3>Veli raporu · ${esc(st.ad)}</h3>
-      <p class="muted small" style="margin-top:-.3rem">${weekHeader(weekStart)} · Bilgiler panelden otomatik dolduruldu, istediğin gibi düzenleyebilirsin.</p>
+      <p class="muted small" style="margin-top:-.3rem">${weekHeader(weekStart)} · Bilgiler panelden otomatik dolduruldu, düzenleyebilirsin. Rapor veliye <b>yönetici tarafından</b> iletilir.</p>
+      ${durumHtml}
       <div class="grid-2">
-        <div class="field"><label>💪 Güçlü yanlar</label><input id="vr_g" maxlength="120" value="${esc(guclu.join(", "))}"/></div>
-        <div class="field"><label>🎯 Odak konular</label><input id="vr_o" maxlength="120" value="${esc(odak.join(", "))}"/></div>
+        <div class="field"><label>💪 Güçlü yanlar</label><input id="vr_g" maxlength="120" ${kilitli ? "disabled" : ""} value="${esc(mevcut?.guclu ?? guclu.join(", "))}"/></div>
+        <div class="field"><label>🎯 Odak konular</label><input id="vr_o" maxlength="120" ${kilitli ? "disabled" : ""} value="${esc(mevcut?.odak ?? odak.join(", "))}"/></div>
       </div>
-      <div class="field"><label>Koç notu</label><textarea id="vr_n" maxlength="600" placeholder="Örn. Süre yönetimi belirgin şekilde iyileşti. Bu hafta fen ağırlıklı ilerliyoruz."></textarea></div>
+      <div class="field"><label>Koç notu</label><textarea id="vr_n" maxlength="600" ${kilitli ? "disabled" : ""} placeholder="Örn. Süre yönetimi belirgin şekilde iyileşti. Bu hafta fen ağırlıklı ilerliyoruz.">${esc(mevcut?.kocNotu || "")}</textarea></div>
       <div class="field"><label>Önizleme</label><textarea id="vr_p" style="min-height:220px;font-size:.88rem;background:#f6f7f9" readonly></textarea></div>
-      <div class="row">
-        <button class="btn btn-ghost btn-sm" id="vr_copy">Kopyala</button>
-        ${hedefTel ? `<a class="btn btn-accent btn-sm" id="vr_wa" target="_blank" rel="noopener" style="margin-left:auto">WhatsApp'ta veliye aç</a>`
-          : `<span class="muted small" style="margin-left:auto">Veli telefonu kayıtlı değil (admin panelinden eklenebilir). Kopyalayıp gönderebilirsin.</span>`}
-      </div>`, { wide: true });
+      <div class="row">${kilitli ? `<span class="muted small">Gönderilmiş rapor değiştirilemez.</span>`
+        : `<button class="btn btn-accent" id="vr_send" style="margin-left:auto">${mevcut ? "Raporu güncelle" : "Admin'e gönder"}</button>`}</div>`, { wide: true });
     const el = m.el;
     const build = () => {
+      if (kilitli) return mevcut.metin;
       const g = $("#vr_g", el).value.trim(), o = $("#vr_o", el).value.trim(), n = $("#vr_n", el).value.trim();
       const lines = [
         `Merhaba 👋 *${ilkAd}* · haftalık özet (${weekHeader(weekStart)})`, "",
@@ -417,17 +423,23 @@ async function CoachPanel(me) {
         n ? `\nKoç notu: ${n}` : null,
         "", `— ${me.ad} · 24 Akademi`,
       ].filter((x) => x !== null);
-      const text = lines.join("\n");
-      $("#vr_p", el).value = text;
-      const wa = $("#vr_wa", el);
-      if (wa) wa.href = `${waLink(hedefTel)}?text=${encodeURIComponent(text)}`;
-      return text;
+      return lines.join("\n");
     };
-    el.addEventListener("input", (e) => { if (e.target.id !== "vr_p") build(); });
-    build();
-    $("#vr_copy", el).onclick = async () => {
-      try { await navigator.clipboard.writeText(build()); toast("Rapor kopyalandı."); }
-      catch { $("#vr_p", el).select(); document.execCommand("copy"); toast("Rapor kopyalandı."); }
+    const refresh = () => { $("#vr_p", el).value = build(); };
+    el.addEventListener("input", (e) => { if (e.target.id !== "vr_p") refresh(); });
+    refresh();
+    if (!kilitli) $("#vr_send", el).onclick = async (e) => {
+      e.target.disabled = true;
+      const data = {
+        ogrenciId: st.id, kocId: me.id, hafta, metin: build(), durum: "bekliyor",
+        guclu: $("#vr_g", el).value.trim(), odak: $("#vr_o", el).value.trim(), kocNotu: $("#vr_n", el).value.trim(),
+        tamamlanan: done, toplamGorev: list.length, updatedAt: serverTimestamp(),
+      };
+      try {
+        if (mevcut) await updateDoc(raporRef, data);
+        else await setDoc(raporRef, { ...data, createdAt: serverTimestamp() });
+        toast("Rapor yöneticiye gönderildi."); m.close();
+      } catch (err) { console.error(err); toast("Gönderilemedi: " + (err.code || ""), "err"); e.target.disabled = false; }
     };
   }
 

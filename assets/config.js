@@ -18,9 +18,16 @@ export const BRAND = {
 export const SINAV = { ad: "YKS 2027", tarih: "2027-06-19T10:15:00+03:00" };
 
 // Ana sayfadaki "Koçlarımız" bölümü. foto: "assets/koclar/mert.jpg" gibi (boşsa baş harfler görünür)
+// ornek: true → kartta "Örnek profil" etiketi çıkar. Gerçek koçlar gelince bu satırları silin/değiştirin.
 export const KOCLAR = [
-  { ad: "Mert Tekin", okul: "Boğaziçi Üni. – Ekonomi", alan: "EA", derece: "EA-398", foto: "" },
-  // { ad: "Ad Soyad", okul: "İTÜ – Bilgisayar Müh.", alan: "SAY", derece: "SAY-1.250", foto: "" },
+  { ad: "Mert Tekin",    okul: "Boğaziçi Üni. – Ekonomi",            alan: "EA",  derece: "EA-398",    foto: "" },
+  { ad: "Zeynep A.",     okul: "İTÜ – Bilgisayar Mühendisliği",       alan: "SAY", derece: "SAY-1.240", foto: "", ornek: true },
+  { ad: "Elif K.",       okul: "Hacettepe Üni. – Tıp",                alan: "SAY", derece: "SAY-2.105", foto: "", ornek: true },
+  { ad: "Burak Y.",      okul: "ODTÜ – Elektrik-Elektronik Müh.",     alan: "SAY", derece: "SAY-890",   foto: "", ornek: true },
+  { ad: "Selin D.",      okul: "Galatasaray Üni. – Hukuk",            alan: "EA",  derece: "EA-612",    foto: "", ornek: true },
+  { ad: "Can B.",        okul: "Koç Üni. – İşletme",                  alan: "EA",  derece: "EA-1.050",  foto: "", ornek: true },
+  { ad: "Ahmet Ç.",      okul: "Ankara Üni. – Tarih",                 alan: "SOZ", derece: "SÖZ-154",   foto: "", ornek: true },
+  { ad: "İrem S.",       okul: "Boğaziçi Üni. – Mütercim Tercümanlık", alan: "DIL", derece: "DİL-97",    foto: "", ornek: true },
 ];
 
 // Firebase Console → Proje ayarları → Web uygulaması → config
