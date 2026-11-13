@@ -19,7 +19,7 @@ const header = `
 <div class="topbar"><div class="container"><span class="dot"></span>
   <span><b id="tbDays">—</b> gün sonra YKS. Ön görüşme ücretsiz.</span><a href="index.html#kayit">Hemen başla →</a></div></div>
 <nav class="nav" id="nav"><div class="container">
-  <a href="index.html" class="logo"><img src="assets/logo-24.png" alt="24 Akademi" /></a>
+  <a href="index.html" class="logo"><img src="assets/logo-24-sm.png" alt="24 Akademi" width="80" height="72" /></a>
   <div class="nav-links" id="navLinks">
     <a href="index.html" class="${on("home")}">Ana sayfa</a>
     <a href="koclar.html" class="${on("koclar")}">Koçlarımız</a>
@@ -44,7 +44,7 @@ const footer = `
 <footer class="foot2"><div class="container">
   <div class="cols">
     <div>
-      <a href="index.html" class="logo" style="margin-bottom:.8rem"><img src="assets/logo-24.png" alt="24 Akademi" style="height:52px" /></a>
+      <a href="index.html" class="logo" style="margin-bottom:.8rem"><img src="assets/logo-24-sm.png" alt="24 Akademi" style="height:52px;width:auto" /></a>
       <p class="muted small" style="max-width:280px">Derece yapmış üniversite öğrencilerinden birebir YKS koçluğu. ${BRAND.slogan}.</p>
     </div>
     <div><h5>Platform</h5><a href="index.html#nasil">Nasıl çalışır</a><a href="index.html#panel">Panel</a><a href="index.html#fiyat">Fiyat</a><a href="sss.html">SSS</a></div>
@@ -93,7 +93,27 @@ addEventListener("scroll", onScroll, { passive: true }); onScroll();
 const days = () => Math.max(0, Math.floor((new Date(SINAV.tarih).getTime() - Date.now()) / 86400000));
 $("#tbDays").textContent = days();
 
+// ---------- anında geçiş: linklerin üzerine gelince sayfayı önceden hazırla ----------
+if (HTMLScriptElement.supports?.("speculationrules")) {
+  const sr = document.createElement("script");
+  sr.type = "speculationrules";
+  sr.textContent = JSON.stringify({ prerender: [{ where: { and: [{ href_matches: "/*" }, { not: { href_matches: "/portal*" } }, { not: { href_matches: "/admin*" } }] }, eagerness: "moderate" }] });
+  document.head.appendChild(sr);
+} else {
+  const done = new Set();
+  document.addEventListener("pointerover", (e) => {
+    const a = e.target.closest("a[href]"); if (!a || a.origin !== location.origin || done.has(a.pathname)) return;
+    done.add(a.pathname); const l = document.createElement("link"); l.rel = "prefetch"; l.href = a.href; document.head.appendChild(l);
+  }, { passive: true });
+}
+
 // ---------- scroll animasyonu ----------
 const io = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
-export function observeReveal(root = document) { $$(".reveal:not(.in)", root).forEach((el, i) => { el.style.transitionDelay = `${(i % 4) * 60}ms`; io.observe(el); }); }
+export function observeReveal(root = document) {
+  $$(".reveal:not(.in)", root).forEach((el, i) => {
+    // ilk ekranda görünenler beklemeden gösterilir
+    if (el.getBoundingClientRect().top < innerHeight) { el.style.transition = "none"; el.classList.add("in"); return; }
+    el.style.transitionDelay = `${(i % 4) * 50}ms`; io.observe(el);
+  });
+}
 observeReveal();

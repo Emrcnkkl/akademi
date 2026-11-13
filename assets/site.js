@@ -1,8 +1,25 @@
 // Sayfalar arasında paylaşılan bileşenler: koç kartları, ön kayıt formu, koç başvuru formu, SSS.
-import { db } from "./firebase.js";
 import { KOCLAR } from "./config.js";
 import { $, $$, toast, esc } from "./ui.js";
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Firebase (~300 KB) sayfa açılışını yavaşlatmasın: sadece form kullanılınca yüklenir.
+let fbPromise = null;
+function loadFirebase() {
+  fbPromise ??= Promise.all([
+    import("./firebase.js"),
+    import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"),
+  ]).then(([{ db }, fs]) => ({ db, ...fs }));
+  return fbPromise;
+}
+// form ile etkileşime geçilince (odak/dokunma) arka planda önceden yükle
+function warmUp(form) {
+  const go = () => loadFirebase().catch(() => { fbPromise = null; });
+  ["focusin", "pointerdown"].forEach((ev) => form.addEventListener(ev, go, { once: true }));
+}
+async function save(col, data) {
+  const { db, collection, addDoc, serverTimestamp } = await loadFirebase();
+  return addDoc(collection(db, col), { ...data, createdAt: serverTimestamp() });
+}
 
 const ALAN_AD = { SAY: "Sayısal", EA: "Eşit Ağırlık", SOZ: "Sözel", DIL: "Dil" };
 
@@ -41,6 +58,7 @@ const success = (form, title, text) => { form.innerHTML = `<div class="success-b
 // ---------- öğrenci / veli ön kayıt ----------
 export function bindStudentForm() {
   const f = $("#studentForm"); if (!f) return;
+  warmUp(f);
   let kim = "ogrenci";
   $$("#kimSeg button").forEach((b) => b.addEventListener("click", () => {
     $$("#kimSeg button").forEach((x) => x.classList.remove("on")); b.classList.add("on"); kim = b.dataset.v;
@@ -49,9 +67,9 @@ export function bindStudentForm() {
     e.preventDefault(); if (!checkForm(f)) return;
     const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
     try {
-      await addDoc(collection(db, "ogrenciBasvurulari"), {
+      await save("ogrenciBasvurulari", {
         kim, ad: val("s_ad"), telefon: val("s_tel"), email: val("s_email"), sinif: val("s_sinif"),
-        alan: val("s_alan"), hedef: val("s_hedef"), kvkk: true, durum: "yeni", createdAt: serverTimestamp(),
+        alan: val("s_alan"), hedef: val("s_hedef"), kvkk: true, durum: "yeni",
       });
       success(f, "Talebini aldık!", "24 saat içinde WhatsApp'tan sana ulaşacağız.");
     } catch (err) { console.error(err); toast("Gönderilemedi, lütfen tekrar dene.", "err"); btn.disabled = false; }
@@ -61,14 +79,15 @@ export function bindStudentForm() {
 // ---------- koç başvurusu ----------
 export function bindMentorForm() {
   const f = $("#mentorForm"); if (!f) return;
+  warmUp(f);
   f.addEventListener("submit", async (e) => {
     e.preventDefault(); if (!checkForm(f)) return;
     const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
     try {
-      await addDoc(collection(db, "mentorBasvurulari"), {
+      await save("mentorBasvurulari", {
         ad: val("m_ad"), telefon: val("m_tel"), email: val("m_email"), universite: val("m_uni"), bolum: val("m_bolum"),
         alan: val("m_alan"), siralama: Number(val("m_sira")), yil: Number(val("m_yil")), neden: val("m_neden"),
-        kvkk: true, durum: "yeni", createdAt: serverTimestamp(),
+        kvkk: true, durum: "yeni",
       });
       success(f, "Başvurun alındı!", "Değerlendirip en kısa sürede seninle iletişime geçeceğiz.");
     } catch (err) { console.error(err); toast("Gönderilemedi, lütfen tekrar dene.", "err"); btn.disabled = false; }
