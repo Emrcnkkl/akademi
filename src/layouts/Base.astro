@@ -1,5 +1,5 @@
 ---
-import { ClientRouter } from "astro:transitions";
+import { ClientRouter, fade } from "astro:transitions";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import "../styles/style.css";
@@ -10,7 +10,7 @@ const canonical = new URL(Astro.url.pathname.replace(/\.html$/, ""), Astro.site)
 const og = new URL("/assets/og.png", Astro.site);
 ---
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" transition:animate="none">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,7 +35,7 @@ const og = new URL("/assets/og.png", Astro.site);
 </head>
 <body data-page={page}>
   <Header page={page} />
-  <main transition:animate="fade">
+  <main transition:animate={fade({ duration: "0.16s" })}>
     <slot />
   </main>
   <Footer />
