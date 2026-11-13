@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- yardımcılar ----------
+    function signedIn() { return request.auth != null; }
+    function roleOf(uid) {
+      return exists(/databases/$(database)/documents/roles/$(uid))
+        ? get(/databases/$(database)/documents/roles/$(uid)).data.role : null;
+    }
+    function isAdmin() { return signedIn() && roleOf(request.auth.uid) == 'admin'; }
+    function isKoc()   { return signedIn() && roleOf(request.auth.uid) == 'koc'; }
+    function myUser()  { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isActive() { return signedIn() && myUser().get('aktif', true) != false; }
+    // öğrenci gerçekten bu koça mı bağlı?
+    function kocunOgrencisi(ogrId) {
+      return get(/databases/$(database)/documents/users/$(ogrId)).data.get('kocId', null) == request.auth.uid;
+    }
+    function unchanged(f) { return request.resource.data.get(f, null) == resource.data.get(f, null); }
+
+    // ---------- roller: sadece admin yazar ----------
+    match /roles/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // ---------- kullanıcı profilleri ----------
+    match /users/{uid} {
+      allow read: if isAdmin()
+        || (signedIn() && request.auth.uid == uid)
+        || (isKoc() && isActive() && resource.data.get('kocId', null) == request.auth.uid)   // koç → kendi öğrencileri
+        || (signedIn() && myUser().get('kocId', null) == uid);                               // öğrenci → kendi koçu
+      allow write: if isAdmin();
+    }
+
+    // ---------- haftalık görevler ----------
+    match /gorevler/{id} {
+      allow read: if isAdmin()
+        || (isActive() && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid));
+      allow create: if isAdmin()
+        || (isKoc() && isActive() && request.resource.data.kocId == request.auth.uid
+            && kocunOgrencisi(request.resource.data.ogrenciId));
+      allow update: if isAdmin()
+        || (isKoc() && isActive() && resource.data.kocId == request.auth.uid
+            && unchanged('kocId') && unchanged('ogrenciId'))
+        // öğrenci sadece "tamam" ve "ogrenciNotu" alanlarını değiştirebilir
+        || (isActive() && resource.data.ogrenciId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tamam', 'ogrenciNotu'])
+            && request.resource.data.tamam is bool
+            && request.resource.data.ogrenciNotu is string && request.resource.data.ogrenciNotu.size() <= 500);
+      allow delete: if isAdmin() || (isKoc() && isActive() && resource.data.kocId == request.auth.uid);
+    }
+
+    // ---------- denemeler ----------
+    match /denemeler/{id} {
+      allow read: if isAdmin()
+        || (isActive() && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid));
+      allow create: if isAdmin()
+        || (isActive() && request.resource.data.ogrenciId == request.auth.uid
+            && request.resource.data.kocId == myUser().get('kocId', null))
+        || (isKoc() && isActive() && request.resource.data.kocId == request.auth.uid
+            && kocunOgrencisi(request.resource.data.ogrenciId));
+      allow update: if isAdmin()
+        || (isActive() && resource.data.ogrenciId == request.auth.uid && unchanged('ogrenciId') && unchanged('kocId'));
+      allow delete: if isAdmin() || (isActive() && resource.data.ogrenciId == request.auth.uid);
+    }
+
+    // ---------- görüşme notları ----------
+    match /gorusmeler/{id} {
+      allow read: if isAdmin()
+        || (isActive() && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid));
+      allow create: if isAdmin()
+        || (isKoc() && isActive() && request.resource.data.kocId == request.auth.uid
+            && kocunOgrencisi(request.resource.data.ogrenciId));
+      allow update, delete: if isAdmin()
+        || (isKoc() && isActive() && resource.data.kocId == request.auth.uid && (request.method == 'delete' || (unchanged('kocId') && unchanged('ogrenciId'))));
+    }
+
+    // ---------- ana sayfa başvuruları (herkes oluşturabilir, sadece admin görür) ----------
+    function str(v, max) { return v is string && v.size() <= max; }
+
+    match /ogrenciBasvurulari/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['kim','ad','telefon','email','sinif','alan','hedef','kvkk','durum','createdAt'])
+        && str(request.resource.data.ad, 80) && request.resource.data.ad.size() > 1
+        && str(request.resource.data.telefon, 20) && request.resource.data.telefon.size() > 6
+        && str(request.resource.data.email, 120) && str(request.resource.data.hedef, 600)
+        && str(request.resource.data.sinif, 20) && str(request.resource.data.alan, 10)
+        && request.resource.data.kim in ['ogrenci', 'veli']
+        && request.resource.data.kvkk == true && request.resource.data.durum == 'yeni'
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /mentorBasvurulari/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['ad','telefon','email','universite','bolum','alan','siralama','yil','neden','kvkk','durum','createdAt'])
+        && str(request.resource.data.ad, 80) && request.resource.data.ad.size() > 1
+        && str(request.resource.data.telefon, 20) && str(request.resource.data.email, 120)
+        && str(request.resource.data.universite, 100) && str(request.resource.data.bolum, 100)
+        && str(request.resource.data.alan, 10) && str(request.resource.data.neden, 800)
+        && request.resource.data.siralama is number && request.resource.data.yil is number
+        && request.resource.data.kvkk == true && request.resource.data.durum == 'yeni'
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}

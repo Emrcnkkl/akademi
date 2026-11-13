@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Portal | {marka}</title>
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!-- Yükleniyor -->
+<div id="loading" class="login-wrap"><div class="muted">Yükleniyor…</div></div>
+
+<!-- Giriş -->
+<div id="loginView" class="login-wrap hidden">
+  <div class="card login-card">
+    <a href="index.html" class="logo"><img src="assets/logo-24.png" alt="24 Akademi" style="height:64px" /></a>
+    <h2 style="font-size:1.5rem">Panele giriş</h2>
+    <p class="muted small" style="margin-top:-.3rem">Öğrenci, koç ve yöneticiler için.</p>
+    <form id="loginForm">
+      <div class="field"><label for="l_email">E-posta</label><input id="l_email" type="email" autocomplete="username" required /></div>
+      <div class="field"><label for="l_pass">Şifre</label><input id="l_pass" type="password" autocomplete="current-password" required /></div>
+      <button class="btn btn-accent" style="width:100%" type="submit">Giriş yap</button>
+    </form>
+    <div class="spread" style="margin-top:1rem">
+      <button class="btn btn-ghost btn-sm" id="forgotBtn" type="button">Şifremi unuttum</button>
+      <a href="index.html" class="small">← Ana sayfa</a>
+    </div>
+    <p class="muted small" style="margin-top:1.2rem">Hesabın yok mu? Hesaplar ön görüşmeden sonra ekibimiz tarafından açılır.</p>
+  </div>
+</div>
+
+<!-- Uygulama -->
+<div id="appView" class="hidden">
+  <header class="app-top">
+    <div class="container">
+      <a href="index.html" class="logo"><img src="assets/logo-24.png" alt="24 Akademi" style="height:40px" /></a>
+      <div class="user-chip">
+        <a id="adminLink" href="admin.html" class="btn btn-ghost btn-sm hidden">Admin paneli</a>
+        <span class="avatar" id="meAvatar"></span>
+        <div><b id="meName"></b><div class="muted small" id="meRole"></div></div>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn">Çıkış</button>
+      </div>
+    </div>
+  </header>
+  <main class="app-main"><div class="container" id="root"></div></main>
+</div>
+
+<script type="module" src="assets/portal.js"></script>
+</body>
+</html>

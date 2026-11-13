@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Admin | {marka}</title>
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+<div id="loading" class="login-wrap"><div class="muted">Yükleniyor…</div></div>
+
+<div id="appView" class="hidden">
+  <header class="app-top">
+    <div class="container">
+      <a href="index.html" class="logo"><img src="assets/logo-24.png" alt="24 Akademi" style="height:40px" /></a>
+      <div class="user-chip">
+        <span class="badge err">Yönetici</span>
+        <span class="avatar" id="meAvatar"></span>
+        <b id="meName"></b>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn">Çıkış</button>
+      </div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="container">
+      <div class="spread"><div class="page-title">Yönetim paneli</div><button class="btn btn-accent btn-sm" id="newUserBtn">+ Yeni kullanıcı</button></div>
+      <div class="tabs" id="aTabs" style="margin-top:1rem">
+        <button class="on" data-t="genel">Genel bakış</button>
+        <button data-t="ogrBas">Öğrenci başvuruları <span class="badge warn" id="cntOgr"></span></button>
+        <button data-t="mentorBas">Koç başvuruları <span class="badge warn" id="cntMen"></span></button>
+        <button data-t="kullanici">Kullanıcılar</button>
+      </div>
+      <div id="aBody"></div>
+    </div>
+  </main>
+</div>
+
+<script type="module" src="assets/admin.js"></script>
+</body>
+</html>
