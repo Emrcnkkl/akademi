@@ -14,10 +14,13 @@ export const BRAND = {
   baslangicFiyat: "2.900 TL",         // ana sayfada görünen başlangıç fiyatı
 };
 
+// Geri sayım: ÖSYM 2027 takvimi – TYT 19 Haziran 2027, 10:15
+export const SINAV = { ad: "YKS 2027", tarih: "2027-06-19T10:15:00+03:00" };
+
 // Ana sayfadaki "Koçlarımız" bölümü. foto: "assets/koclar/mert.jpg" gibi (boşsa baş harfler görünür)
 export const KOCLAR = [
-  { ad: "Mert Tekin", okul: "Boğaziçi Üni. – Ekonomi", derece: "EA-398", foto: "" },
-  // { ad: "Ad Soyad", okul: "İTÜ – Bilgisayar Müh.", derece: "SAY-1.250", foto: "" },
+  { ad: "Mert Tekin", okul: "Boğaziçi Üni. – Ekonomi", alan: "EA", derece: "EA-398", foto: "" },
+  // { ad: "Ad Soyad", okul: "İTÜ – Bilgisayar Müh.", alan: "SAY", derece: "SAY-1.250", foto: "" },
 ];
 
 // Firebase Console → Proje ayarları → Web uygulaması → config
