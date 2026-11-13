@@ -113,7 +113,7 @@ tr:hover td { background: #faf9f6; }
 .nav .container { display: flex; align-items: center; justify-content: space-between; height: 68px; }
 .logo { display: flex; align-items: center; gap: .55rem; font-weight: 800; font-size: 1.25rem; color: var(--ink); text-decoration: none; letter-spacing: -.03em; }
 .logo img { height: 46px; width: auto; display: block; }
-.nav-links { display: flex; gap: 1.6rem; align-items: center; }
+.nav-links { display: flex; gap: 1.35rem; align-items: center; }
 .nav-links a:not(.btn) { color: var(--ink-2); text-decoration: none; font-weight: 600; font-size: .92rem; }
 .nav-links a:not(.btn):hover { color: var(--ink); }
 

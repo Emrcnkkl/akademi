@@ -29,31 +29,9 @@
   }
   </script>
 </head>
-<body>
+<body data-page="home">
 
-<!-- Duyuru çubuğu -->
-<div class="topbar">
-  <div class="container">
-    <span class="dot"></span>
-    <span><b id="tbDays">—</b> gün sonra YKS. Ön görüşme ücretsiz.</span>
-    <a href="#kayit">Hemen başla →</a>
-  </div>
-</div>
-
-<nav class="nav" id="nav">
-  <div class="container">
-    <a href="#" class="logo"><img src="assets/logo-24.png" alt="24 Akademi" /></a>
-    <div class="nav-links">
-      <a href="#nasil">Nasıl çalışır</a>
-      <a href="#panel">Panel</a>
-      <a href="#koclar">Koçlar</a>
-      <a href="#net">Net hesapla</a>
-      <a href="#fiyat">Fiyat</a>
-      <a href="portal.html" class="btn btn-ghost btn-sm">Giriş</a>
-      <a href="#kayit" class="btn btn-accent btn-sm">Ön kayıt</a>
-    </div>
-  </div>
-</nav>
+<div id="site-header"></div>
 
 <!-- ============ HERO ============ -->
 <header class="hero2">
@@ -215,7 +193,7 @@
   <div class="container">
     <div class="spread sh reveal" style="max-width:none">
       <div><span class="kicker">Koçlarımız</span><h2>Bu yoldan geçtiler. Şimdi seninle yürüyorlar.</h2></div>
-      <a href="#mentor-ol" class="btn btn-ghost btn-sm">Sen de koç ol →</a>
+      <a href="koclar.html" class="btn btn-ghost btn-sm">Tüm koçlar →</a>
     </div>
     <div class="seg coach-filter" id="coachFilter">
       <button class="on" data-a="">Tümü</button><button data-a="SAY">Sayısal</button><button data-a="EA">Eşit Ağırlık</button><button data-a="SOZ">Sözel</button><button data-a="DIL">Dil</button>
@@ -224,25 +202,18 @@
   </div>
 </section>
 
-<!-- ============ NET HESAPLAYICI ============ -->
-<section class="block" id="net" style="padding-top:0">
+<!-- ============ YKS ARAÇLARI ============ -->
+<section class="block" id="araclar" style="padding-top:0">
   <div class="container">
-    <div class="sh reveal"><span class="kicker">Ücretsiz araç</span><h2>TYT netini hesapla.</h2><p>Son denemendeki doğru ve yanlışlarını gir (4 yanlış 1 doğruyu götürür).</p></div>
-    <div class="calc reveal">
-      <div class="calc-in metal-card">
-        <div class="calc-row head"><span>Test</span><span style="text-align:center">Doğru</span><span style="text-align:center">Yanlış</span><span style="text-align:center">Net</span></div>
-        <div class="calc-row"><span class="lbl"><b>Türkçe</b><small>40 soru</small></span><input type="number" min="0" max="40" data-c="tr" data-k="d" inputmode="numeric"/><input type="number" min="0" max="40" data-c="tr" data-k="y" inputmode="numeric"/><span class="nt" id="n_tr">0</span></div>
-        <div class="calc-row"><span class="lbl"><b>Sosyal</b><small>20 soru</small></span><input type="number" min="0" max="20" data-c="sos" data-k="d" inputmode="numeric"/><input type="number" min="0" max="20" data-c="sos" data-k="y" inputmode="numeric"/><span class="nt" id="n_sos">0</span></div>
-        <div class="calc-row"><span class="lbl"><b>Matematik</b><small>40 soru</small></span><input type="number" min="0" max="40" data-c="mat" data-k="d" inputmode="numeric"/><input type="number" min="0" max="40" data-c="mat" data-k="y" inputmode="numeric"/><span class="nt" id="n_mat">0</span></div>
-        <div class="calc-row"><span class="lbl"><b>Fen</b><small>20 soru</small></span><input type="number" min="0" max="20" data-c="fen" data-k="d" inputmode="numeric"/><input type="number" min="0" max="20" data-c="fen" data-k="y" inputmode="numeric"/><span class="nt" id="n_fen">0</span></div>
-      </div>
-      <div class="calc-out">
-        <small>Toplam TYT neti</small>
-        <div class="big" id="netTop">0</div><span class="of">/ 120</span>
-        <div class="meter"><i id="netBar"></i></div>
-        <p id="netMsg">Değerleri girdikçe netin hesaplanır.</p>
-        <a href="#kayit" class="btn btn-accent" id="netCta">Bu netle hedefime nasıl ulaşırım?</a>
-      </div>
+    <div class="spread sh reveal" style="max-width:none">
+      <div><span class="kicker">Ücretsiz araçlar</span><h2>YKS araçları</h2><p>Kayıt gerekmeden kullan.</p></div>
+      <a href="araclar.html" class="btn btn-ghost btn-sm">Tüm araçlar →</a>
+    </div>
+    <div class="tools-grid">
+      <a href="tyt-net.html" class="tool-card metal-card reveal"><span class="dd-ic">🧮</span><div><b>TYT Net Hesaplama</b><span>Doğru-yanlıştan netini anında hesapla</span></div><span class="go">→</span></a>
+      <a href="ayt-net.html" class="tool-card metal-card reveal"><span class="dd-ic">📐</span><div><b>AYT Net Hesaplama</b><span>Sayısal, EA, sözel ve dil için</span></div><span class="go">→</span></a>
+      <a href="yks-sayac.html" class="tool-card metal-card reveal"><span class="dd-ic">⏳</span><div><b>YKS Sayacı</b><span>Sınava kalan gün, hafta ve saat</span></div><span class="go">→</span></a>
+      <a href="pomodoro.html" class="tool-card metal-card reveal"><span class="dd-ic">🍅</span><div><b>Pomodoro Zamanlayıcı</b><span>25 dk odak, 5 dk mola</span></div><span class="go">→</span></a>
     </div>
   </div>
 </section>
@@ -338,57 +309,25 @@
   </div>
 </section>
 
-<!-- ============ KOÇ OL ============ -->
-<section class="block" id="mentor-ol" style="padding-top:0">
-  <div class="container form-split">
-    <div class="reveal">
-      <span class="kicker">Ekibe katıl</span>
-      <h2 style="font-size:clamp(1.9rem,3.6vw,2.6rem)">Derece yaptın mı? Koçumuz ol.</h2>
-      <p class="muted" style="font-size:1.05rem">Programını kendin belirle, öğrencilerinin hayatına dokun, ek gelir kazan.</p>
-      <ul class="bullets">
-        <li>Esnek çalışma, tamamen online</li>
-        <li>Koçluk eğitimi ve hazır şablonlar bizden</li>
-        <li>Öğrenci sayısına göre artan kazanç</li>
-        <li>Özel ders vererek ekstra gelir</li>
-      </ul>
-    </div>
-    <div class="card metal-card reveal">
-      <form id="mentorForm" novalidate>
-        <div class="grid-2">
-          <div class="field"><label for="m_ad">Ad soyad *</label><input id="m_ad" required maxlength="80" /></div>
-          <div class="field"><label for="m_tel">Telefon *</label><input id="m_tel" type="tel" required maxlength="20" /></div>
-        </div>
-        <div class="field"><label for="m_email">E-posta *</label><input id="m_email" type="email" required maxlength="120" /></div>
-        <div class="grid-2">
-          <div class="field"><label for="m_uni">Üniversite *</label><input id="m_uni" required maxlength="100" /></div>
-          <div class="field"><label for="m_bolum">Bölüm *</label><input id="m_bolum" required maxlength="100" /></div>
-        </div>
-        <div class="grid-3">
-          <div class="field"><label for="m_alan">Alan *</label>
-            <select id="m_alan" required><option value="">Seç</option><option value="SAY">SAY</option><option value="EA">EA</option><option value="SOZ">SÖZ</option><option value="DIL">DİL</option></select></div>
-          <div class="field"><label for="m_sira">Sıralama *</label><input id="m_sira" type="number" min="1" required /></div>
-          <div class="field"><label for="m_yil">Sınav yılı *</label><input id="m_yil" type="number" min="2015" max="2030" required /></div>
-        </div>
-        <div class="field"><label for="m_neden">Neden koç olmak istiyorsun?</label><textarea id="m_neden" maxlength="800"></textarea></div>
-        <label class="check"><input type="checkbox" id="m_kvkk" required /> <span><a href="kvkk.html" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum, başvurumun değerlendirilmesini kabul ediyorum.</span></label>
-        <button class="btn btn-primary" style="width:100%" type="submit">Başvurumu gönder</button>
-      </form>
-    </div>
+<!-- ============ KOÇ OL (kısa) ============ -->
+<section class="block" style="padding-top:0">
+  <div class="container">
+    <div class="countband"><div class="inner reveal" style="grid-template-columns:1fr auto">
+      <div><h3>Derece yaptın mı? Koçumuz ol.</h3><p>Esnek, tamamen online, öğrenci sayısına göre artan kazanç. Koçluk eğitimi bizden.</p></div>
+      <a href="koclar.html#koc-ol" class="btn btn-accent">Koç başvurusu yap →</a>
+    </div></div>
   </div>
 </section>
 
 <!-- ============ SSS ============ -->
 <section class="block" id="sss" style="padding-top:0">
   <div class="container">
-    <div class="sh reveal"><span class="kicker">SSS</span><h2>Sık sorulanlar</h2></div>
+    <div class="spread sh reveal" style="max-width:780px"><div><span class="kicker">SSS</span><h2>Sık sorulanlar</h2></div><a href="sss.html" class="btn btn-ghost btn-sm">Tüm sorular →</a></div>
     <div class="faq reveal" id="faq">
       <details><summary>Koçluk ders anlatımı içeriyor mu?</summary><p>Koçluk; programını, takibini ve stratejini kapsar. Konu anlatımı gerekirse, alanında derece yapmış bir hocamızdan birebir ders ayrıca alınabilir.</p></details>
       <details><summary>Koçlarınız kimler?</summary><p>YKS'de derece yapmış, iyi üniversitelerde okuyan öğrenciler. Her koç mülakat ve koçluk eğitimimizden geçer. Kıdemli koçlarımız da programları düzenli olarak kontrol eder.</p></details>
-      <details><summary>Koçumu kendim seçebilir miyim?</summary><p>Evet. Ön görüşmede hedefine ve alanına uygun koçları önerir, seçimi birlikte yaparız. Uyuşamazsan koçunu değiştirebilirsin.</p></details>
-      <details><summary>Görüşmeler nasıl yapılıyor?</summary><p>Haftada bir birebir görüntülü görüşme yapılır. Hafta içinde de mesajla iletişim kurulur. Programın ve görevlerin panelde durur.</p></details>
       <details><summary>Ödeme ve iptal nasıl?</summary><p>4 haftalık dönemler halinde ödeme yapılır. Taahhüt yoktur. Bir sonraki dönemi istemezsen yenilemezsin, bu kadar.</p></details>
       <details><summary>Veli olarak süreci takip edebilir miyim?</summary><p>Evet. Görev tamamlama oranı, deneme netleri ve koç notlarından oluşan haftalık bir özet paylaşıyoruz.</p></details>
-      <details><summary>Mezunlar ve 10–11. sınıflar da katılabilir mi?</summary><p>Elbette. 10. sınıftan mezunlara kadar herkes için programı seviyeye göre kuruyoruz.</p></details>
     </div>
   </div>
 </section>
@@ -407,27 +346,7 @@
   </div>
 </section>
 
-<footer class="foot2">
-  <div class="container">
-    <div class="cols">
-      <div>
-        <a href="#" class="logo" style="margin-bottom:.8rem"><img src="assets/logo-24.png" alt="24 Akademi" style="height:52px" /></a>
-        <p class="muted small" style="max-width:280px">Derece yapmış üniversite öğrencilerinden birebir YKS koçluğu. <span data-brand="slogan"></span>.</p>
-      </div>
-      <div><h5>Platform</h5><a href="#nasil">Nasıl çalışır</a><a href="#panel">Panel</a><a href="#fiyat">Fiyat</a><a href="#net">Net hesapla</a></div>
-      <div><h5>Topluluk</h5><a href="#koclar">Koçlarımız</a><a href="#mentor-ol">Koç ol</a><a href="#veli">Veliler</a><a href="#sss">SSS</a></div>
-      <div><h5>İletişim</h5><a data-insta href="#"></a><a data-mail href="#"></a><a data-wa href="#" target="_blank" rel="noopener">WhatsApp</a><a href="portal.html">Panele giriş</a></div>
-    </div>
-    <div class="bottom"><span>© <span id="yr"></span> <span data-brand="tamAd"></span></span><a href="kvkk.html" style="color:inherit">KVKK Aydınlatma Metni</a></div>
-  </div>
-</footer>
-
-<!-- mobil sabit CTA -->
-<div class="mcta" id="mcta"><a href="#kayit" class="btn btn-accent">Ücretsiz ön görüşme</a></div>
-
-<a class="wa-float" data-wa href="#" target="_blank" rel="noopener" aria-label="WhatsApp">
-  <svg viewBox="0 0 32 32"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.2.6 4.4 1.7 6.3L3 29l7.3-1.9c1.8 1 3.8 1.5 5.8 1.5 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-4.3 1.1 1.2-4.2-.3-.4c-1-1.7-1.6-3.6-1.6-5.5C5.3 9.8 10.1 5.1 16 5.1s10.7 4.7 10.7 10.5S21.9 26.1 16 26.1zm5.9-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.2-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.3.3-.6.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.1 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.7-.4z"/></svg>
-</a>
+<div id="site-footer"></div>
 
 <script type="module" src="assets/landing.js"></script>
 </body>

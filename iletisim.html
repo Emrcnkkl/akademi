@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>İletişim | 24 Akademi</title>
+  <meta name="description" content="24 Akademi ile iletişime geç: WhatsApp, e-posta ve Instagram. YKS koçluğu hakkında soruların için bize yaz." />
+  <meta name="theme-color" content="#12172e" />
+  <link rel="canonical" href="https://akademi-swart-iota.vercel.app/iletisim" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="İletişim | 24 Akademi" />
+  <meta property="og:description" content="24 Akademi ile iletişime geç: WhatsApp, e-posta ve Instagram. YKS koçluğu hakkında soruların için bize yaz." />
+  <meta property="og:image" content="https://akademi-swart-iota.vercel.app/assets/og.png" />
+  <meta property="og:locale" content="tr_TR" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/favicon.png" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="assets/landing.css" />
+</head>
+<body data-page="iletisim">
+<div id="site-header"></div>
+<main>
+<section class="page-hero"><div class="container">
+  <div class="crumbs"><a href="index.html">Ana sayfa</a> / <span>İletişim</span></div>
+  <span class="kicker">İletişim</span><h1>Bize ulaş.</h1>
+  <p>Sorunu yaz, en kısa sürede dönelim. En hızlı yanıtı WhatsApp'tan alırsın.</p>
+</div></section>
+<section class="block" style="padding-top:0"><div class="container">
+  <div class="contact-grid">
+    <a class="contact-card metal-card reveal" data-wa href="#" target="_blank" rel="noopener"><span class="dd-ic">💬</span><b>WhatsApp</b><span>En hızlı yanıt için yaz</span></a>
+    <a class="contact-card metal-card reveal" id="mailCard" href="#"><span class="dd-ic">✉️</span><b>E-posta</b><span id="mailTxt"></span></a>
+    <a class="contact-card metal-card reveal" id="instaCard" href="#" target="_blank" rel="noopener"><span class="dd-ic">📸</span><b>Instagram</b><span id="instaTxt"></span></a>
+  </div>
+  <div class="form-split" style="margin-top:3rem">
+    <div class="reveal">
+      <h2 style="font-size:clamp(1.7rem,3vw,2.2rem)">Mesaj gönder</h2>
+      <p class="muted">Mesajını yaz, WhatsApp'ta ya da e-postanda hazır açılsın. Sen sadece gönder'e bas.</p>
+      <ul class="bullets">
+        <li>Koçluk başlatmak için: <a href="index.html#kayit">ücretsiz ön görüşme formu</a></li>
+        <li>Koç olmak için: <a href="koclar.html#koc-ol">koç başvuru formu</a></li>
+        <li>Sık sorulanlar: <a href="sss.html">SSS sayfası</a></li>
+      </ul>
+    </div>
+    <div class="card metal-card reveal">
+      <div class="grid-2">
+        <div class="field"><label for="c_ad">Ad soyad</label><input id="c_ad" maxlength="80" /></div>
+        <div class="field"><label for="c_konu">Konu</label><select id="c_konu"><option>Koçluk hakkında bilgi</option><option>Fiyat ve ödeme</option><option>Mevcut koçluğum</option><option>Koçluk başvurusu</option><option>İş birliği</option><option>Diğer</option></select></div>
+      </div>
+      <div class="field"><label for="c_msg">Mesajın</label><textarea id="c_msg" maxlength="1500" style="min-height:140px"></textarea></div>
+      <div class="grid-2"><button class="btn btn-accent" id="sendWa" type="button">WhatsApp ile gönder</button><button class="btn btn-ghost" id="sendMail" type="button">E-posta ile gönder</button></div>
+    </div>
+  </div>
+</div></section>
+</main>
+<div id="site-footer"></div>
+<script type="module">
+  import "./assets/layout.js";
+  import { BRAND } from "./assets/config.js";
+  import { toast } from "./assets/ui.js";
+  const $ = (s) => document.querySelector(s);
+  $("#mailCard").href = "mailto:" + BRAND.email; $("#mailTxt").textContent = BRAND.email;
+  $("#instaCard").href = BRAND.instagram; $("#instaTxt").textContent = BRAND.instagramKullanici;
+  const text = () => {
+    const ad = $("#c_ad").value.trim(), konu = $("#c_konu").value, msg = $("#c_msg").value.trim();
+    if (!msg) { toast("Lütfen mesajını yaz.", "err"); $("#c_msg").focus(); return null; }
+    return { konu, body: `Merhaba, ${ad ? "ben " + ad + ". " : ""}\nKonu: ${konu}\n\n${msg}` };
+  };
+  $("#sendWa").onclick = () => { const t = text(); if (t) window.open(`https://wa.me/${BRAND.whatsapp}?text=${encodeURIComponent(t.body)}`, "_blank", "noopener"); };
+  $("#sendMail").onclick = () => { const t = text(); if (t) location.href = `mailto:${BRAND.email}?subject=${encodeURIComponent("24 Akademi – " + t.konu)}&body=${encodeURIComponent(t.body)}`; };
+</script>
+</body>
+</html>

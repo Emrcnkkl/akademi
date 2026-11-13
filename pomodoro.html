@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pomodoro Zamanlayıcı | 24 Akademi</title>
+  <meta name="description" content="Ücretsiz online Pomodoro zamanlayıcı. 25 dakika odak, 5 dakika mola. YKS'ye hazırlanırken verimli ders çalışma tekniği." />
+  <meta name="theme-color" content="#12172e" />
+  <link rel="canonical" href="https://akademi-swart-iota.vercel.app/pomodoro" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Pomodoro Zamanlayıcı | 24 Akademi" />
+  <meta property="og:description" content="Ücretsiz online Pomodoro zamanlayıcı. 25 dakika odak, 5 dakika mola. YKS'ye hazırlanırken verimli ders çalışma tekniği." />
+  <meta property="og:image" content="https://akademi-swart-iota.vercel.app/assets/og.png" />
+  <meta property="og:locale" content="tr_TR" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/favicon.png" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="assets/landing.css" />
+</head>
+<body data-page="pomodoro">
+<div id="site-header"></div>
+<main>
+<section class="page-hero" style="padding-bottom:1rem"><div class="container">
+  <div class="crumbs"><a href="index.html">Ana sayfa</a> / <a href="araclar.html">YKS Araçları</a> / <span>Pomodoro Zamanlayıcı</span></div>
+  <h1>Pomodoro zamanlayıcı</h1>
+  <p>25 dakika tam odak, 5 dakika mola. Her 4 turdan sonra uzun mola. Telefonu uzağa koy ve başla.</p>
+</div></section>
+<section class="block" style="padding-top:1rem"><div class="container">
+  <div class="pomo metal-card" id="pomo">
+    <div class="seg" id="modeSeg"><button class="on" data-m="odak">Odak</button><button data-m="kisa">Kısa mola</button><button data-m="uzun">Uzun mola</button></div>
+    <div class="pomo-time" id="time">25:00</div>
+    <div class="pomo-ring"><i id="bar"></i></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn btn-accent" id="start" style="min-width:150px">Başla</button>
+      <button class="btn btn-ghost" id="reset">Sıfırla</button>
+      <button class="btn btn-ghost" id="skip">Atla →</button>
+    </div>
+    <div class="pomo-dots" id="dots"><i></i><i></i><i></i><i></i></div>
+    <p class="muted small" style="margin:.8rem 0 0">Bugün tamamlanan odak: <b id="count">0</b> tur · <b id="mins">0</b> dk</p>
+    <details style="margin-top:1.2rem;text-align:left"><summary class="small" style="cursor:pointer;font-weight:700">Süreleri ayarla</summary>
+      <div class="grid-3" style="margin-top:.8rem">
+        <div class="field"><label>Odak (dk)</label><input type="number" id="sOdak" min="5" max="90" value="25"/></div>
+        <div class="field"><label>Kısa mola</label><input type="number" id="sKisa" min="1" max="30" value="5"/></div>
+        <div class="field"><label>Uzun mola</label><input type="number" id="sUzun" min="5" max="60" value="15"/></div>
+      </div></details>
+  </div>
+  <div class="grid-2" style="gap:1rem;margin-top:1.5rem">
+    <div class="card metal-card reveal"><h3 style="font-size:1.1rem">Pomodoro ile nasıl çalışılır?</h3>
+      <p class="muted" style="margin:0">Tek bir göreve odaklan (örn. 30 paragraf sorusu). Süre bitene kadar başka bir şeyle ilgilenme. Molada ekrandan uzaklaş, su iç, biraz hareket et. 4 turdan sonra uzun mola ver.</p></div>
+    <div class="side-cta reveal"><h3>Ne çalışacağını koçun planlasın.</h3><p>Pomodoro'yu nasıl kullanacağını bilirsin; neyi çalışacağını haftalık programın söyler.</p><a href="index.html#kayit" class="btn btn-accent" style="width:100%">Ücretsiz ön görüşme al</a></div>
+  </div>
+</div></section>
+<section class="block" style="padding-top:1rem"><div class="container"><div class="sh reveal"><span class="kicker">Diğer araçlar</span><h2 style="font-size:1.8rem">Ücretsiz YKS araçları</h2></div><div class="tools-grid"><a href="tyt-net.html" class="tool-card metal-card reveal"><span class="dd-ic">🧮</span><div><b>TYT Net Hesaplama</b><span>Doğru-yanlıştan netini anında hesapla</span></div><span class="go">→</span></a><a href="ayt-net.html" class="tool-card metal-card reveal"><span class="dd-ic">📐</span><div><b>AYT Net Hesaplama</b><span>Sayısal, EA, sözel ve dil için</span></div><span class="go">→</span></a><a href="yks-sayac.html" class="tool-card metal-card reveal"><span class="dd-ic">⏳</span><div><b>YKS Sayacı</b><span>Sınava kalan gün, hafta ve saat</span></div><span class="go">→</span></a></div></div></section>
+</main>
+<div id="site-footer"></div>
+<script type="module">
+  import "./assets/layout.js";
+  const $ = (s) => document.querySelector(s);
+  const LBL = { odak: "Odak", kisa: "Kısa mola", uzun: "Uzun mola" };
+  let mode = "odak", left = 0, total = 0, timer = null, tur = 0;
+  const key = "pomo-" + new Date().toISOString().slice(0, 10);
+  let done = 0; try { done = +localStorage.getItem(key) || 0; } catch {}
+  const dur = () => ({ odak: +$("#sOdak").value || 25, kisa: +$("#sKisa").value || 5, uzun: +$("#sUzun").value || 15 }[mode] * 60);
+  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  function render() {
+    $("#time").textContent = fmt(left);
+    $("#bar").style.width = `${total ? (100 * (total - left)) / total : 0}%`;
+    $("#pomo").classList.toggle("mola", mode !== "odak");
+    document.title = timer ? `${fmt(left)} · ${LBL[mode]} | 24 Akademi` : "Pomodoro Zamanlayıcı | 24 Akademi";
+    document.querySelectorAll("#dots i").forEach((d, i) => d.classList.toggle("on", i < tur % 4 || (tur > 0 && tur % 4 === 0 && mode === "uzun")));
+    document.querySelectorAll("#modeSeg button").forEach((b) => b.classList.toggle("on", b.dataset.m === mode));
+    $("#count").textContent = done; $("#mins").textContent = done * (+$("#sOdak").value || 25);
+  }
+  function setMode(m) { stop(); mode = m; total = left = dur(); render(); }
+  function stop() { clearInterval(timer); timer = null; $("#start").textContent = "Başla"; }
+  function beep() {
+    try { const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, .25, .5].forEach((t) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(.2, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + t + .2); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .22); });
+    } catch {}
+  }
+  function finish() {
+    beep(); stop();
+    if (mode === "odak") { tur++; done++; try { localStorage.setItem(key, done); } catch {} setMode(tur % 4 === 0 ? "uzun" : "kisa"); }
+    else setMode("odak");
+  }
+  $("#start").onclick = () => {
+    if (timer) return stop(), render();
+    const end = Date.now() + left * 1000;
+    timer = setInterval(() => { left = Math.max(0, Math.round((end - Date.now()) / 1000)); render(); if (!left) finish(); }, 250);
+    $("#start").textContent = "Duraklat"; render();
+  };
+  $("#reset").onclick = () => setMode(mode);
+  $("#skip").onclick = () => finish();
+  document.querySelectorAll("#modeSeg button").forEach((b) => (b.onclick = () => setMode(b.dataset.m)));
+  ["#sOdak", "#sKisa", "#sUzun"].forEach((id) => $(id).addEventListener("change", () => { if (!timer) setMode(mode); }));
+  setMode("odak");
+</script>
+</body>
+</html>

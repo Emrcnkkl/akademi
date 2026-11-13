@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Koçlarımız | 24 Akademi</title>
+  <meta name="description" content="YKS'de derece yapmış üniversite öğrencilerinden oluşan koç kadromuz. Sayısal, eşit ağırlık, sözel ve dil alanlarında birebir YKS koçluğu." />
+  <meta name="theme-color" content="#12172e" />
+  <link rel="canonical" href="https://akademi-swart-iota.vercel.app/koclar" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Koçlarımız | 24 Akademi" />
+  <meta property="og:description" content="YKS'de derece yapmış üniversite öğrencilerinden oluşan koç kadromuz. Sayısal, eşit ağırlık, sözel ve dil alanlarında birebir YKS koçluğu." />
+  <meta property="og:image" content="https://akademi-swart-iota.vercel.app/assets/og.png" />
+  <meta property="og:locale" content="tr_TR" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/favicon.png" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="assets/landing.css" />
+</head>
+<body data-page="koclar">
+<div id="site-header"></div>
+<main>
+<section class="page-hero"><div class="container">
+  <div class="crumbs"><a href="index.html">Ana sayfa</a> / <span>Koçlarımız</span></div>
+  <span class="kicker">Koçlarımız</span>
+  <h1>Bu yoldan geçtiler. Şimdi seninle yürüyorlar.</h1>
+  <p>Koçlarımızın hepsi YKS'de derece yapmış üniversite öğrencileri. Sınavı çok yakın zamanda yaşadılar; hangi kaynağın, hangi tempo ve hangi stratejinin işe yaradığını bizzat biliyorlar.</p>
+</div></section>
+<section class="block" style="padding-top:0"><div class="container">
+  <div class="seg coach-filter" id="coachFilter">
+      <button class="on" data-a="">Tümü</button><button data-a="SAY">Sayısal</button><button data-a="EA">Eşit Ağırlık</button><button data-a="SOZ">Sözel</button><button data-a="DIL">Dil</button>
+    </div>
+  <div class="coaches" id="coachGrid"></div>
+</div></section>
+<section class="block" style="padding-top:0"><div class="container">
+  <div class="sh reveal"><span class="kicker">Seçim süreci</span><h2>Her derece yapan, koçumuz olamaz.</h2><p>Bir koçun seninle çalışmaya başlamadan önce geçtiği aşamalar:</p></div>
+  <div class="steps2">
+    <div class="step2 metal-card reveal"><span class="num" style="color:var(--brand)">01</span><h3>Sıralama doğrulama</h3><p>ÖSYM sonuç belgesiyle derecesi ve alanı doğrulanır.</p></div>
+    <div class="step2 metal-card reveal"><span class="num" style="color:var(--ink)">02</span><h3>Mülakat</h3><p>İletişim becerisi, sabır ve öğrenciye yaklaşımı değerlendirilir.</p></div>
+    <div class="step2 metal-card reveal"><span class="num" style="color:var(--ink)">03</span><h3>Koçluk eğitimi</h3><p>Program yazma, deneme analizi ve motivasyon görüşmesi üzerine eğitim alır.</p></div>
+    <div class="step2 metal-card reveal"><span class="num" style="color:var(--brand)">04</span><h3>Denetim</h3><p>Kıdemli koçlar programları ve görüşme notlarını düzenli olarak kontrol eder.</p></div>
+  </div>
+</div></section>
+<section class="block" id="koc-ol" style="padding-top:0">
+  <div class="container form-split">
+    <div class="reveal">
+      <span class="kicker">Ekibe katıl</span>
+      <h2 style="font-size:clamp(1.9rem,3.6vw,2.6rem)">Derece yaptın mı? Koçumuz ol.</h2>
+      <p class="muted" style="font-size:1.05rem">Programını kendin belirle, öğrencilerinin hayatına dokun, ek gelir kazan.</p>
+      <ul class="bullets">
+        <li>Esnek çalışma, tamamen online</li>
+        <li>Koçluk eğitimi ve hazır şablonlar bizden</li>
+        <li>Öğrenci sayısına göre artan kazanç</li>
+        <li>Özel ders vererek ekstra gelir</li>
+      </ul>
+    </div>
+    <div class="card metal-card reveal">
+      <form id="mentorForm" novalidate>
+        <div class="grid-2">
+          <div class="field"><label for="m_ad">Ad soyad *</label><input id="m_ad" required maxlength="80" /></div>
+          <div class="field"><label for="m_tel">Telefon *</label><input id="m_tel" type="tel" required maxlength="20" /></div>
+        </div>
+        <div class="field"><label for="m_email">E-posta *</label><input id="m_email" type="email" required maxlength="120" /></div>
+        <div class="grid-2">
+          <div class="field"><label for="m_uni">Üniversite *</label><input id="m_uni" required maxlength="100" /></div>
+          <div class="field"><label for="m_bolum">Bölüm *</label><input id="m_bolum" required maxlength="100" /></div>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label for="m_alan">Alan *</label>
+            <select id="m_alan" required><option value="">Seç</option><option value="SAY">SAY</option><option value="EA">EA</option><option value="SOZ">SÖZ</option><option value="DIL">DİL</option></select></div>
+          <div class="field"><label for="m_sira">Sıralama *</label><input id="m_sira" type="number" min="1" required /></div>
+          <div class="field"><label for="m_yil">Sınav yılı *</label><input id="m_yil" type="number" min="2015" max="2030" required /></div>
+        </div>
+        <div class="field"><label for="m_neden">Neden koç olmak istiyorsun?</label><textarea id="m_neden" maxlength="800"></textarea></div>
+        <label class="check"><input type="checkbox" id="m_kvkk" required /> <span><a href="kvkk.html" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum, başvurumun değerlendirilmesini kabul ediyorum.</span></label>
+        <button class="btn btn-primary" style="width:100%" type="submit">Başvurumu gönder</button>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+<div id="site-footer"></div>
+<script type="module">
+  import "./assets/layout.js";
+  import { renderCoaches, bindCoachFilter, bindMentorForm } from "./assets/site.js";
+  renderCoaches(document.getElementById("coachGrid"));
+  bindCoachFilter(document.getElementById("coachFilter"), document.getElementById("coachGrid"));
+  bindMentorForm();
+</script>
+</body>
+</html>
