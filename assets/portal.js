@@ -307,7 +307,7 @@ async function CoachPanel(me) {
         body.innerHTML = `<div class="spread" style="margin-bottom:1rem">
             <div class="week-nav"><button class="btn btn-ghost btn-sm" id="prevW">←</button><b>${weekHeader(weekStart)}</b><button class="btn btn-ghost btn-sm" id="nextW">→</button></div>
             <div class="row"><span class="badge ${pct >= 80 ? "ok" : pct >= 50 ? "warn" : "gray"}">%${pct} tamamlandı</span>
-              <button class="btn btn-ghost btn-sm" id="copyW">Geçen haftayı kopyala</button><button class="btn btn-accent btn-sm" id="addT">+ Görev</button></div></div>
+              <button class="btn btn-ghost btn-sm" id="copyW">Geçen haftayı kopyala</button><button class="btn btn-primary btn-sm" id="veliR">📲 Veli raporu</button><button class="btn btn-accent btn-sm" id="addT">+ Görev</button></div></div>
           <div id="weekEl"></div>`;
         renderWeek($("#weekEl"), list, weekStart, "koc");
         $("#prevW").onclick = () => { weekStart = addDays(weekStart, -7); drawTab(st); };
@@ -320,6 +320,7 @@ async function CoachPanel(me) {
           try { await deleteDoc(doc(db, "gorevler", b.dataset.del)); await refresh(); } catch { toast("Silinemedi.", "err"); }
         }));
         $("#copyW").onclick = () => copyLastWeek(st);
+        $("#veliR").onclick = () => veliRaporu(st);
       } else if (tab === "deneme") {
         const list = docs(await getDocs(query(collection(db, "denemeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
         renderDenemeler(body, list, { canDelete: false, onAdd: () => denemeModal(st, me.id, () => drawTab(st)), onDelete: () => {} });
@@ -362,6 +363,71 @@ async function CoachPanel(me) {
         }
         m.close(); toast("Kaydedildi."); await refresh();
       } catch (err) { console.error(err); toast("Kaydedilemedi.", "err"); e.target.disabled = false; }
+    };
+  }
+
+  // ---------- Haftalık veli raporu (WhatsApp) ----------
+  async function veliRaporu(st) {
+    const list = weekTasks(allTasks.filter((t) => t.ogrenciId === st.id), weekStart);
+    const done = list.filter((t) => t.tamam).length;
+    let denemeler = [];
+    try { denemeler = docs(await getDocs(query(collection(db, "denemeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id)))); }
+    catch (e) { console.warn(e); }
+    denemeler.sort((a, b) => a.tarih.localeCompare(b.tarih));
+    const a = iso(weekStart), b = iso(addDays(weekStart, 6));
+    const fmt = (n) => (Math.round(n * 100) / 100).toLocaleString("tr-TR");
+    const denemeSatir = ["TYT", "AYT"].map((tur) => {
+      const all = denemeler.filter((d) => d.tur === tur);
+      const buHafta = all.filter((d) => d.tarih >= a && d.tarih <= b);
+      if (!buHafta.length) return null;
+      const son = buHafta[buHafta.length - 1];
+      const onceki = all[all.indexOf(son) - 1];
+      const fark = onceki ? son.toplam - onceki.toplam : null;
+      return `📝 ${tur} deneme: *${fmt(son.toplam)} net*${fark !== null ? ` (${fark >= 0 ? "▲" : "▼"}${fmt(Math.abs(fark))})` : ""}`;
+    }).filter(Boolean);
+    // güçlü: haftadaki tüm görevleri biten dersler; odak: biten olmayan veya not bırakılan dersler
+    const dersler = [...new Set(list.map((t) => t.ders))];
+    const guclu = dersler.filter((d) => list.filter((t) => t.ders === d).every((t) => t.tamam));
+    const odak = dersler.filter((d) => !guclu.includes(d) || list.some((t) => t.ders === d && t.ogrenciNotu));
+    const ilkAd = (st.ad || "").split(" ")[0];
+    const hedefTel = st.veliTelefon || "";
+
+    const m = openModal(`<h3>Veli raporu · ${esc(st.ad)}</h3>
+      <p class="muted small" style="margin-top:-.3rem">${weekHeader(weekStart)} · Bilgiler panelden otomatik dolduruldu, istediğin gibi düzenleyebilirsin.</p>
+      <div class="grid-2">
+        <div class="field"><label>💪 Güçlü yanlar</label><input id="vr_g" maxlength="120" value="${esc(guclu.join(", "))}"/></div>
+        <div class="field"><label>🎯 Odak konular</label><input id="vr_o" maxlength="120" value="${esc(odak.join(", "))}"/></div>
+      </div>
+      <div class="field"><label>Koç notu</label><textarea id="vr_n" maxlength="600" placeholder="Örn. Süre yönetimi belirgin şekilde iyileşti. Bu hafta fen ağırlıklı ilerliyoruz."></textarea></div>
+      <div class="field"><label>Önizleme</label><textarea id="vr_p" style="min-height:220px;font-size:.88rem;background:#f6f7f9" readonly></textarea></div>
+      <div class="row">
+        <button class="btn btn-ghost btn-sm" id="vr_copy">Kopyala</button>
+        ${hedefTel ? `<a class="btn btn-accent btn-sm" id="vr_wa" target="_blank" rel="noopener" style="margin-left:auto">WhatsApp'ta veliye aç</a>`
+          : `<span class="muted small" style="margin-left:auto">Veli telefonu kayıtlı değil (admin panelinden eklenebilir). Kopyalayıp gönderebilirsin.</span>`}
+      </div>`, { wide: true });
+    const el = m.el;
+    const build = () => {
+      const g = $("#vr_g", el).value.trim(), o = $("#vr_o", el).value.trim(), n = $("#vr_n", el).value.trim();
+      const lines = [
+        `Merhaba 👋 *${ilkAd}* · haftalık özet (${weekHeader(weekStart)})`, "",
+        `✅ Görevler: *${done}/${list.length}${list.length ? ` (%${completion(list)})` : ""}*`,
+        ...denemeSatir,
+        g ? `💪 Güçlü: ${g}` : null,
+        o ? `🎯 Odak: ${o}` : null,
+        n ? `\nKoç notu: ${n}` : null,
+        "", `— ${me.ad} · 24 Akademi`,
+      ].filter((x) => x !== null);
+      const text = lines.join("\n");
+      $("#vr_p", el).value = text;
+      const wa = $("#vr_wa", el);
+      if (wa) wa.href = `${waLink(hedefTel)}?text=${encodeURIComponent(text)}`;
+      return text;
+    };
+    el.addEventListener("input", (e) => { if (e.target.id !== "vr_p") build(); });
+    build();
+    $("#vr_copy", el).onclick = async () => {
+      try { await navigator.clipboard.writeText(build()); toast("Rapor kopyalandı."); }
+      catch { $("#vr_p", el).select(); document.execCommand("copy"); toast("Rapor kopyalandı."); }
     };
   }
 
