@@ -279,3 +279,9 @@ footer a { color: var(--ink-2); text-decoration: none; margin-right: 1.2rem; }
 ::view-transition-old(nav), ::view-transition-new(nav), ::view-transition-old(topbar), ::view-transition-new(topbar) { animation: none; }
 #site-header { min-height: 106px; }
 @media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root) { animation: none; } }
+
+/* tek sayfa sekme geçişi (View Transitions desteklemeyen tarayıcılar için) */
+.view[hidden] { display: none !important; }
+.view.enter { animation: viewIn .28s ease both; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .view.enter { animation: none; } }

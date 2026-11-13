@@ -2,15 +2,18 @@
 
 Statik site (HTML + JS modülleri) · Firebase Authentication + Firestore · Vercel'de yayın.
 
-## Sayfalar
+## Yapı (tek sayfa – sekmeler yeniden yükleme olmadan değişir)
 | Dosya | İçerik |
 |---|---|
-| `index.html` | Ana sayfa: tanıtım, koçlar, fiyat, **öğrenci ön kayıt** ve **koç başvuru** formları |
-| `portal.html` | Giriş + **öğrenci paneli** (haftalık görevler, denemeler/net grafiği, görüşme notları, koçum) ve **koç paneli** (öğrencilerim, program yazma, haftayı kopyalama, deneme ve görüşme notu) |
-| `admin.html` | Başvurular (durum, not, tek tıkla hesap açma), kullanıcı yönetimi, koç eşleştirme, koç yükü |
+| `index.html` | Herkese açık sitenin tamamı. Her sekme bir `<section class="view" data-view="...">`: ana sayfa, koclar, araclar, tyt-net, ayt-net, yks-sayac, pomodoro, hakkimizda, sss, iletisim. Adresler `#/koclar` gibi; `#kayit`, `#fiyat` gibi bölüm bağlantıları ilgili sekmeyi açıp kaydırır. |
+| `assets/app.js` | Sekme yönlendiricisi + her sekmenin kodu (`INIT` nesnesi) |
+| `assets/layout.js` | Ortak üst menü (açılır YKS Araçları), mobil menü, footer |
+| `assets/site.js` | Koç kartları, ön kayıt ve koç başvuru formları (Firebase sadece formda yüklenir) |
+| `portal.html` + `assets/portal.js` | Öğrenci ve koç panelleri |
+| `admin.html` + `assets/admin.js` | Yönetim paneli |
 | `kvkk.html` | KVKK aydınlatma metni **şablonu** (yayından önce hukukçuya kontrol ettirin) |
 
-Marka, iletişim bilgileri, fiyat ve ana sayfadaki koç kartları: **`assets/config.js`**
+Marka, iletişim, fiyat, YKS tarihi ve koç kartları: **`assets/config.js`**
 
 ## Kurulum (bir kerelik)
 
