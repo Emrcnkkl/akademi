@@ -1,13 +1,13 @@
 // Sayfalar arasında paylaşılan bileşenler: koç kartları, ön kayıt formu, koç başvuru formu, SSS.
-
-import { $, $$, toast } from "./ui.js";
+import { KOCLAR } from "./config.js";
+import { $, $$, toast, esc } from "./ui.js";
 
 // Firebase (~300 KB) sayfa açılışını yavaşlatmasın: sadece form kullanılınca yüklenir.
 let fbPromise = null;
 function loadFirebase() {
   fbPromise ??= Promise.all([
-    import("./fb.js"),
-    import("firebase/firestore"),
+    import("./firebase.js"),
+    import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"),
   ]).then(([{ db }, fs]) => ({ db, ...fs }));
   return fbPromise;
 }
@@ -23,22 +23,22 @@ async function save(col, data) {
 
 const ALAN_AD = { SAY: "Sayısal", EA: "Eşit Ağırlık", SOZ: "Sözel", DIL: "Dil" };
 
-// ---------- koç kartları: HTML derlemede üretilir, burada sadece alan filtresi ----------
+// ---------- koç kartları ----------
+export function renderCoaches(el, { alan = "", limit = 0 } = {}) {
+  let list = KOCLAR.filter((k) => !alan || k.alan === alan);
+  if (limit) list = list.slice(0, limit);
+  el.innerHTML = list.length ? list.map((k) => {
+    const ini = k.ad.split(" ").map((p) => p[0]).join("").slice(0, 2);
+    return `<div class="coach">
+      <div class="coach-photo">${k.foto ? `<img src="${esc(k.foto)}" alt="${esc(k.ad)}" loading="lazy">` : `<span class="coach-ini">${esc(ini)}</span>`}
+        <span class="coach-chip">${esc(ALAN_AD[k.alan] || "")}</span>${k.ornek ? `<span class="coach-ornek">Örnek profil</span>` : ""}</div>
+      <div class="coach-tag"><b>${esc(k.ad)}</b><span class="coach-school">${esc(k.okul)}</span><span class="coach-rank">${esc(k.derece)}</span></div></div>`;
+  }).join("") : `<div class="card empty" style="grid-column:1/-1">Bu alandaki koçlarımız yakında burada. Ön görüşmede sana uygun koçu birlikte buluyoruz.</div>`;
+}
 export function bindCoachFilter(filterEl, gridEl) {
-  if (!filterEl || !gridEl) return;
-  const limit = Number(gridEl.dataset.limit) || 0;
-  const apply = (alan) => {
-    let shown = 0;
-    $$(".coach", gridEl).forEach((c) => {
-      const ok = (!alan || c.dataset.alan === alan) && (!limit || shown < limit);
-      c.hidden = !ok; if (ok) shown++;
-    });
-    $(".coach-empty", gridEl)?.toggleAttribute("hidden", shown > 0);
-  };
   $$("button", filterEl).forEach((b) => b.addEventListener("click", () => {
-    $$("button", filterEl).forEach((x) => x.classList.toggle("on", x === b)); apply(b.dataset.a);
+    $$("button", filterEl).forEach((x) => x.classList.toggle("on", x === b)); renderCoaches(gridEl, { alan: b.dataset.a });
   }));
-  apply("");
 }
 
 // ---------- form yardımcıları ----------

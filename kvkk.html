@@ -1,15 +1,28 @@
----
-import Base from "../layouts/Base.astro";
-import { BRAND } from "../config.js";
----
-<Base title="KVKK Aydınlatma Metni | 24 Akademi" description="24 Akademi kişisel verilerin korunması aydınlatma metni." page="kvkk">
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KVKK Aydınlatma Metni | 24 Akademi</title>
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="assets/landing.css" />
+  <link rel="modulepreload" href="assets/layout.js" />
+  <link rel="modulepreload" href="assets/ui.js" />
+  <link rel="modulepreload" href="assets/config.js" />
+</head>
+<body data-page="kvkk">
+<div id="site-header"></div>
 <main class="container card" style="max-width:820px;margin:2.5rem auto 4rem">
-  {/* ÖNEMLİ: Bu metin bir şablondur. Yayına almadan önce bir hukukçuya kontrol ettirin. */}
+  <!-- ÖNEMLİ: Bu metin bir şablondur. Yayına almadan önce bir hukukçuya kontrol ettirin. -->
   <h1 style="font-size:2rem">KVKK Aydınlatma Metni</h1>
   <p class="muted small">Son güncelleme: [tarih]</p>
 
   <h3>1. Veri sorumlusu</h3>
-  <p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu <b>[Şirket unvanı]</b> ("{BRAND.tamAd}"), adres: [adres], e-posta: <a href={`mailto:${BRAND.email}`}>{BRAND.email}</a>.</p>
+  <p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu <b>[Şirket unvanı]</b> ("<span data-brand="tamAd"></span>"), adres: [adres], e-posta: <a data-mail href="#"></a>.</p>
 
   <h3>2. İşlenen kişisel veriler</h3>
   <p>Kimlik (ad soyad), iletişim (telefon, e-posta), eğitim bilgileri (sınıf, alan, deneme sonuçları, hedefler), koç adayları için üniversite, bölüm ve sınav sıralaması; platform kullanımına ilişkin işlem kayıtları.</p>
@@ -27,6 +40,9 @@ import { BRAND } from "../config.js";
   <p>18 yaşından küçük öğrencilere ait veriler veli/vasi bilgisi ve onayı dahilinde işlenir.</p>
 
   <h3>7. Haklarınız</h3>
-  <p>KVKK m.11 kapsamındaki haklarınız için <a href={`mailto:${BRAND.email}`}>{BRAND.email}</a> adresine başvurabilirsiniz.</p>
+  <p>KVKK m.11 kapsamındaki haklarınız için <a data-mail href="#"></a> adresine başvurabilirsiniz.</p>
 </main>
-</Base>
+<div id="site-footer"></div>
+<script type="module">import "./assets/layout.js";</script>
+</body>
+</html>

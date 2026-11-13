@@ -2,26 +2,23 @@
 
 Statik site (HTML + JS modülleri) · Firebase Authentication + Firestore · Vercel'de yayın.
 
-## Yapı (Astro)
-```
-public/              → değişmeyen dosyalar (logo, favicon, og görseli, robots.txt)
-src/config.js        → marka, iletişim, fiyat, YKS tarihi, koç listesi, araç listesi  ← çoğu değişiklik burada
-src/layouts/         → Base.astro (herkese açık sayfalar), Panel.astro (portal/admin)
-src/components/      → Header, Footer, CoachCards
-src/pages/           → her dosya bir sayfa: index, koclar, araclar, tyt-net, ayt-net, yks-sayac,
-                       pomodoro, hakkimizda, sss, iletisim, kvkk, portal, admin
-src/scripts/         → main.js (tüm sayfaların etkileşimleri), site.js (formlar), portal.js, admin.js, fb*.js (Firebase)
-src/styles/          → style.css, landing.css
-```
-- Sayfa geçişleri Astro **ClientRouter** ile yeniden yükleme olmadan yapılır; linkin üzerine gelince sayfa önceden indirilir.
-- Firebase npm paketiyle kullanılır; herkese açık sayfalarda sadece form doldurulunca yüklenir.
-- Yerelde çalıştırma: `npm install` → `npm run dev` (http://localhost:4321)
-- Vercel ayarları `vercel.json` içinde (framework: astro, çıktı: dist).
+## Yapı (tek sayfa – sekmeler yeniden yükleme olmadan değişir)
+| Dosya | İçerik |
+|---|---|
+| `index.html` | Herkese açık sitenin tamamı. Her sekme bir `<section class="view" data-view="...">`: ana sayfa, koclar, araclar, tyt-net, ayt-net, yks-sayac, pomodoro, hakkimizda, sss, iletisim. Adresler `#/koclar` gibi; `#kayit`, `#fiyat` gibi bölüm bağlantıları ilgili sekmeyi açıp kaydırır. |
+| `assets/app.js` | Sekme yönlendiricisi + her sekmenin kodu (`INIT` nesnesi) |
+| `assets/layout.js` | Ortak üst menü (açılır YKS Araçları), mobil menü, footer |
+| `assets/site.js` | Koç kartları, ön kayıt ve koç başvuru formları (Firebase sadece formda yüklenir) |
+| `portal.html` + `assets/portal.js` | Öğrenci ve koç panelleri |
+| `admin.html` + `assets/admin.js` | Yönetim paneli |
+| `kvkk.html` | KVKK aydınlatma metni **şablonu** (yayından önce hukukçuya kontrol ettirin) |
+
+Marka, iletişim, fiyat, YKS tarihi ve koç kartları: **`assets/config.js`**
 
 ## Kurulum (bir kerelik)
 
 1. **Firebase projesi:** https://console.firebase.google.com → Yeni proje (ör. `24akademi`).
-2. **Web uygulaması ekle** → çıkan `firebaseConfig` değerlerini `src/config.js` içine yapıştır.
+2. **Web uygulaması ekle** → çıkan `firebaseConfig` değerlerini `assets/config.js` içine yapıştır.
 3. **Authentication** → Sign-in method → **Email/Password**'ü aç.
    Authentication → Settings → **Authorized domains**'e Vercel adresini (ve sonra kendi domainini) ekle.
 4. **Firestore Database** → Create database (bölge: `eur3` önerilir) → **Rules** sekmesine `firestore.rules` içeriğini yapıştır → Publish.
@@ -32,7 +29,8 @@ src/styles/          → style.css, landing.css
 6. `portal.html`'den bu hesapla giriş yap → otomatik olarak admin paneline yönlenirsin. Bundan sonraki tüm hesaplar admin panelinden açılır.
 
 ## GitHub + Vercel
-1. Repo GitHub'a gönderilince Vercel otomatik derler (`vercel.json` → Astro).
+1. Bu klasördeki her şeyi `akademi` reposunun köküne yükle (`index.html` kökte olmalı).
+2. Vercel → *Add New Project* → `akademi` reposunu seç → Framework: **Other** → Deploy. Build ayarı gerekmez.
 3. Domain alınca Vercel → Settings → Domains'ten bağla ve Firebase *Authorized domains*'e ekle.
 
 ## Veri yapısı (Firestore)

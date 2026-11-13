@@ -1,4 +1,4 @@
-import { BRAND } from "../config.js";
+import { BRAND } from "./config.js";
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];

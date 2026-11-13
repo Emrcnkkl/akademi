@@ -1,11 +1,10 @@
-import { db } from "./fb.js";
-import { auth } from "./fb-auth.js";
+import { auth, db } from "./firebase.js";
 import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
-} from "firebase/auth";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   collection, query, where, getDocs, getDoc, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch,
-} from "firebase/firestore";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   $, $$, esc, fillBrand, toast, iso, monday, addDays, GUNLER, GUN_KISA, trDate, openModal,
   ALANLAR, DERSLER, GOREV_TUR, DERS_LISTESI, lineChart, tsStr,
@@ -43,7 +42,7 @@ onAuthStateChanged(auth, async (user) => {
     const me = userSnap.exists() ? { id: user.uid, ...userSnap.data() } : null;
     if (!role || !me) { toast("Hesabın henüz tanımlanmamış. Yöneticiyle iletişime geç.", "err"); await signOut(auth); return; }
     if (me.aktif === false) { toast("Hesabın pasif durumda.", "err"); await signOut(auth); return; }
-    if (role === "admin") { location.href = "/admin"; return; }
+    if (role === "admin") { location.href = "admin.html"; return; }
 
     $("#meName").textContent = me.ad || user.email;
     $("#meRole").textContent = ROL_ADI[role] || role;
