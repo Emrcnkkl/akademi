@@ -22,10 +22,11 @@ export const KOCLAR = [
 
 // Firebase Console → Proje ayarları → Web uygulaması → config
 export const firebaseConfig = {
-  apiKey: "BURAYA_API_KEY",
-  authDomain: "PROJE-ID.firebaseapp.com",
-  projectId: "PROJE-ID",
-  storageBucket: "PROJE-ID.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:xxxxxxxxxxxx",
+  apiKey: "AIzaSyA8WunLwtkMr9St14j7iRRTb1td8Gil7Ks",
+  authDomain: "akademi-8d8cb.firebaseapp.com",
+  projectId: "akademi-8d8cb",
+  storageBucket: "akademi-8d8cb.firebasestorage.app",
+  messagingSenderId: "1062206754627",
+  appId: "1:1062206754627:web:1b899b2c003679263de9f6",
+  measurementId: "G-D812QCG7YX",
 };
