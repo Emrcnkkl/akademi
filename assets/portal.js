@@ -5,8 +5,9 @@ import {
 import {
   collection, query, where, getDocs, getDoc, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { renderKonular, renderHedef, renderSorular, renderChat, watchUnread, renderPaket } from "./panel-ext.js";
-import { denemeAnalizModal, renderAnalizOzet, renderHataDefteri, renderKaynaklar, renderOzet } from "./panel-ext2.js";
+// Panel bileşenleri giriş ekranını bekletmesin: arka planda yüklenir, panel açılırken hazır olur.
+let P = {};
+const panelsReady = Promise.all([import("./panel-ext.js"), import("./panel-ext2.js")]).then(([a, b]) => (P = { ...a, ...b }));
 import {
   $, $$, esc, fillBrand, toast, iso, monday, addDays, GUNLER, GUN_KISA, trDate, openModal,
   ALANLAR, DERSLER, GOREV_TUR, DERS_LISTESI, lineChart, tsStr,
@@ -35,7 +36,9 @@ $("#forgotBtn").addEventListener("click", async () => {
 });
 $("#logoutBtn").addEventListener("click", () => signOut(auth));
 
+let slowTimer = setTimeout(() => { const l = $("#loading"); if (l && !l.classList.contains("hidden")) l.innerHTML = `<div class="card" style="max-width:380px;text-align:center"><b>Bağlantı yavaş görünüyor…</b><p class="muted small">Sayfa hâlâ yükleniyor. Uzun sürerse yenilemeyi dene.</p><button class="btn btn-accent btn-sm" onclick="location.reload()">Yenile</button></div>`; }, 10000);
 onAuthStateChanged(auth, async (user) => {
+  clearTimeout(slowTimer);
   if (!user) return show("loginView");
   show("loading");
   try {
@@ -173,11 +176,11 @@ function renderDenemeler(el, list, { canDelete, onAdd, onDelete, editable = canD
       </tbody></table>` : `<div class="empty">Henüz deneme girilmedi.</div>`}</div>`;
   $("#addDeneme", el).addEventListener("click", onAdd);
   $$("[data-deldn]", el).forEach((b) => b.addEventListener("click", () => onDelete(b.dataset.deldn)));
-  renderAnalizOzet($("#analizOzet", el), list);
+  P.renderAnalizOzet($("#analizOzet", el), list);
   $$("[data-an]", el).forEach((b) => b.addEventListener("click", () => {
     const d = list.find((x) => x.id === b.dataset.an);
     if (!editable && !(d.analiz && Object.keys(d.analiz).length)) return toast("Öğrenci bu deneme için analiz girmemiş.", "err");
-    denemeAnalizModal(d, { editable, onSaved: onRefresh });
+    P.denemeAnalizModal(d, { editable, onSaved: onRefresh });
   }));
 }
 
@@ -192,6 +195,7 @@ function renderGorusmeler(el, list, { canAdd, onAdd }) {
 
 // ============ ÖĞRENCİ PANELİ ============
 async function StudentPanel(me) {
+  await panelsReady;
   const root = $("#root");
   let weekStart = monday();
   let coach = null;
@@ -205,7 +209,7 @@ async function StudentPanel(me) {
   let tab = "ozet", unsub = null;
   const goTab = (t) => { $$("#sTabs button").forEach((x) => x.classList.toggle("on", x.dataset.t === t)); tab = t; draw(); scrollTo({ top: 0, behavior: "smooth" }); };
   $$("#sTabs button").forEach((b) => b.addEventListener("click", () => goTab(b.dataset.t)));
-  watchUnread({ me, asCoach: false }, (byStu) => {
+  P.watchUnread({ me, asCoach: false }, (byStu) => {
     const n = Object.values(byStu).reduce((a, b) => a + b, 0), el = $("#sUnread");
     el.textContent = n; el.classList.toggle("hidden", !n || tab === "mesaj");
   });
@@ -216,12 +220,12 @@ async function StudentPanel(me) {
     try {
       if (tab === "ozet") {
         const all = docs(await getDocs(query(collection(db, "gorevler"), where("ogrenciId", "==", me.id))));
-        await renderOzet(body, me, { coach, gorevler: all, goTab,
+        await P.renderOzet(body, me, { coach, gorevler: all, goTab,
           onToggleTask: async (id, val) => { try { await updateDoc(doc(db, "gorevler", id), { tamam: val }); } catch { toast("Güncellenemedi.", "err"); } } });
       } else if (tab === "hata") {
-        await renderHataDefteri(body, me, { editable: true });
+        await P.renderHataDefteri(body, me, { editable: true });
       } else if (tab === "kaynak") {
-        await renderKaynaklar(body, me, { editable: true });
+        await P.renderKaynaklar(body, me, { editable: true });
       } else if (tab === "hafta") {
         const all = docs(await getDocs(query(collection(db, "gorevler"), where("ogrenciId", "==", me.id))));
         const list = weekTasks(all, weekStart);
@@ -248,16 +252,16 @@ async function StudentPanel(me) {
           };
         }));
       } else if (tab === "konu") {
-        await renderKonular(body, me, { editable: true });
+        await P.renderKonular(body, me, { editable: true });
       } else if (tab === "soru") {
-        await renderSorular(body, me, { editable: true });
+        await P.renderSorular(body, me, { editable: true });
       } else if (tab === "mesaj") {
         $("#sUnread").classList.add("hidden");
-        unsub = renderChat(body, { me, ogrenciId: me.id, kocId: me.kocId, karsiAd: coach?.ad, asCoach: false });
+        unsub = P.renderChat(body, { me, ogrenciId: me.id, kocId: me.kocId, karsiAd: coach?.ad, asCoach: false });
       } else if (tab === "deneme") {
         const list = docs(await getDocs(query(collection(db, "denemeler"), where("ogrenciId", "==", me.id))));
         body.innerHTML = `<div id="hedefEl" style="margin-bottom:1rem"></div><div id="denEl"></div>`;
-        await renderHedef($("#hedefEl"), me, list, { editable: true });
+        await P.renderHedef($("#hedefEl"), me, list, { editable: true });
         renderDenemeler($("#denEl"), list, {
           canDelete: true, editable: true, onRefresh: draw,
           onAdd: () => denemeModal(me, me.kocId, draw),
@@ -273,7 +277,7 @@ async function StudentPanel(me) {
           ${coach.telefon ? `<a class="btn btn-accent" style="margin-top:1rem" target="_blank" rel="noopener" href="${waLink(coach.telefon)}">WhatsApp'tan yaz</a>` : ""}`
           : `<div class="card empty">Henüz bir koça atanmadın. Ekibimiz en kısa sürede eşleştirme yapacak.</div>`;
         body.innerHTML = `<div class="grid-2" style="gap:1.5rem;align-items:start"><div>${body.innerHTML}</div><div id="paketEl"></div></div>`;
-        await renderPaket($("#paketEl"), me);
+        await P.renderPaket($("#paketEl"), me);
       }
     } catch (err) { console.error(err); body.innerHTML = `<div class="card empty">Veriler yüklenemedi (${esc(err.code || "")}).</div>`; }
   }
@@ -282,6 +286,7 @@ async function StudentPanel(me) {
 
 // ============ KOÇ PANELİ ============
 async function CoachPanel(me) {
+  await panelsReady;
   const root = $("#root");
   let weekStart = monday();
   let students = [], allTasks = [], selId = null, tab = "program", unsub = null, unread = {};
@@ -358,19 +363,19 @@ async function CoachPanel(me) {
         $("#copyW").onclick = () => copyLastWeek(st);
         $("#veliR").onclick = () => veliRaporu(st);
       } else if (tab === "konu") {
-        await renderKonular(body, st, { editable: false });
+        await P.renderKonular(body, st, { editable: false });
       } else if (tab === "soru") {
-        await renderSorular(body, st, { editable: false, kocId: me.id });
+        await P.renderSorular(body, st, { editable: false, kocId: me.id });
       } else if (tab === "mesaj") {
-        unsub = renderChat(body, { me, ogrenciId: st.id, kocId: me.id, karsiAd: st.ad, asCoach: true });
+        unsub = P.renderChat(body, { me, ogrenciId: st.id, kocId: me.id, karsiAd: st.ad, asCoach: true });
       } else if (tab === "hata") {
-        await renderHataDefteri(body, st, { editable: false, kocId: me.id });
+        await P.renderHataDefteri(body, st, { editable: false, kocId: me.id });
       } else if (tab === "kaynak") {
-        await renderKaynaklar(body, st, { editable: false });
+        await P.renderKaynaklar(body, st, { editable: false });
       } else if (tab === "deneme") {
         const list = docs(await getDocs(query(collection(db, "denemeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
         body.innerHTML = `<div id="hedefEl" style="margin-bottom:1rem"></div><div id="denEl"></div>`;
-        await renderHedef($("#hedefEl"), st, list, { editable: false });
+        await P.renderHedef($("#hedefEl"), st, list, { editable: false });
         renderDenemeler($("#denEl"), list, { canDelete: false, editable: false, onAdd: () => denemeModal(st, me.id, () => drawTab(st)), onDelete: () => {} });
       } else if (tab === "gorusme") {
         const list = docs(await getDocs(query(collection(db, "gorusmeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
@@ -532,7 +537,7 @@ async function CoachPanel(me) {
 
   try {
     await loadBase(); shell();
-    watchUnread({ me, asCoach: true }, (byStu) => {
+    P.watchUnread({ me, asCoach: true }, (byStu) => {
       unread = byStu;
       const tot = Object.values(byStu).reduce((a, b) => a + b, 0);
       if ($("#unTot")) $("#unTot").textContent = tot;

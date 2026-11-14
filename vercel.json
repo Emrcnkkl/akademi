@@ -9,6 +9,15 @@
           "value": "noindex"
         }
       ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, stale-while-revalidate=604800"
+        }
+      ]
     }
   ],
   "redirects": [
