@@ -29,6 +29,8 @@ const DURUM = [["Başlanmadı", "gray"], ["Çalışılıyor", "warn"], ["Bitti",
 export async function renderKonular(el, student, { editable }) {
   const takip = await getTakip(student.id);
   const state = { ...(takip.konular || {}) };
+  const tekrar = { ...(takip.konuTekrar || {}) };
+  const bugun = iso(new Date());
   let sinav = "TYT";
   const aytDersler = AYT_ALAN[student.alan] || AYT_ALAN.SAY;
 
@@ -55,7 +57,8 @@ export async function renderKonular(el, student, { editable }) {
         return `<div class="card konu-card"><div class="spread"><h4 style="margin:0">${esc(d)}</h4><span class="badge ${b === ks.length ? "ok" : "gray"}">${b}/${ks.length}</span></div>
           <div class="progress" style="margin:.5rem 0 .7rem"><i style="width:${Math.round((100 * b) / ks.length)}%"></i></div>
           ${ks.map((k) => { const key = konuKey(sinav, d, k), v = state[key] || 0;
-            return `<button class="konu k${v}" data-k="${key}" ${editable ? "" : "disabled"}><span class="kdot"></span><span class="kname">${esc(k)}</span><span class="kst">${DURUM[v][0]}</span></button>`; }).join("")}
+            const t = tekrar[key], due = t && v >= 2 ? (t.sonraki <= bugun ? `<span class="kdue now">🔁 Tekrar zamanı</span>` : `<span class="kdue">🔁 ${trDate(t.sonraki).slice(0, 5)}</span>`) : "";
+            return `<button class="konu k${v}" data-k="${key}" ${editable ? "" : "disabled"}><span class="kdot"></span><span class="kname">${esc(k)}${due}</span><span class="kst">${DURUM[v][0]}</span></button>`; }).join("")}
         </div>`;
       }).join("")}</div>`;
     $$("#kSeg button", el).forEach((b) => (b.onclick = () => { sinav = b.dataset.s; draw(); }));
@@ -65,10 +68,13 @@ export async function renderKonular(el, student, { editable }) {
   const toggle = (b) => {
     const k = b.dataset.k, v = ((state[k] || 0) + 1) % 4;
     state[k] = v;
+    // tekrar planı: konu "bitti" olunca 1 gün sonra ilk tekrar; geri alınırsa plan silinir
+    if (v === 2 && !tekrar[k]) tekrar[k] = { bitti: bugun, n: 0, sonraki: iso(addDays(new Date(), 1)) };
+    if (v < 2) delete tekrar[k];
     b.className = `konu k${v}`; b.querySelector(".kst").textContent = DURUM[v][0];
     clearTimeout(timer);
     timer = setTimeout(async () => {   // hızlı tıklamaları tek kayıtta topla
-      try { await saveTakip(student.id, { konular: state }); draw(); } catch (e) { console.error(e); toast("Kaydedilemedi.", "err"); }
+      try { await setDoc(doc(db, "takip", student.id), { konular: state, konuTekrar: tekrar, updatedAt: serverTimestamp() }, { mergeFields: ["konular", "konuTekrar", "updatedAt"] }); draw(); } catch (e) { console.error(e); toast("Kaydedilemedi.", "err"); }
     }, 700);
   };
   draw();
@@ -116,6 +122,7 @@ export async function renderSorular(el, student, { editable, kocId }) {
   try { kayit = docs(await getDocs(q)); } catch (e) { console.error(e); }
   const byDate = Object.fromEntries(kayit.map((k) => [k.tarih, k]));
   let gun = iso(new Date());
+  const saat = (dk) => (dk ? `${Math.floor(dk / 60)} sa ${dk % 60 ? (dk % 60) + " dk" : ""}`.trim() : "0 sa");
 
   const draw = () => {
     const days = [...Array(14)].map((_, i) => iso(addDays(new Date(), i - 13)));
@@ -130,20 +137,21 @@ export async function renderSorular(el, student, { editable, kocId }) {
       <div class="stats">
         <div class="stat"><div class="n">${(byDate[iso(new Date())]?.toplam || 0).toLocaleString("tr-TR")}</div><div class="l">Bugün çözülen</div></div>
         <div class="stat"><div class="n">${hafta.toLocaleString("tr-TR")}</div><div class="l">Son 7 gün</div></div>
-        <div class="stat"><div class="n">${Math.round(hafta / 7)}</div><div class="l">Günlük ortalama</div></div>
+        <div class="stat"><div class="n">${saat(days.slice(7).reduce((s, d) => s + (byDate[d]?.sure || 0), 0))}</div><div class="l">Son 7 gün çalışma süresi</div></div>
         <div class="stat"><div class="n">${onceki ? (hafta >= onceki ? "▲" : "▼") + " %" + Math.abs(Math.round((100 * (hafta - onceki)) / onceki)) : "–"}</div><div class="l">Önceki 7 güne göre</div></div>
       </div>
       <div class="grid-2" style="gap:1rem;align-items:start">
         <div class="card"><h3 style="margin-top:0">Son 14 gün</h3>
           <div class="bars">${days.map((d) => { const v = byDate[d]?.toplam || 0;
-            return `<div class="bar-col ${d === gun ? "sel" : ""}" data-g="${d}" title="${trDate(d)}: ${v} soru"><span class="bv">${v || ""}</span><i style="height:${Math.round((100 * v) / max)}%"></i><span class="bl">${trDate(d).slice(0, 2)}</span></div>`; }).join("")}</div>
+            return `<div class="bar-col ${d === gun ? "sel" : ""}" data-g="${d}" title="${trDate(d)}: ${v} soru${byDate[d]?.sure ? ", " + saat(byDate[d].sure) : ""}"><span class="bv">${v || ""}</span><i style="height:${Math.round((100 * v) / max)}%"></i><span class="bl">${trDate(d).slice(0, 2)}</span></div>`; }).join("")}</div>
           <div style="margin-top:1rem">${Object.entries(dersTop).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="mini-row"><span>${esc(k)}</span><b>${v}</b></div>`).join("") || `<div class="empty">Son 7 günde kayıt yok.</div>`}</div>
         </div>
         ${editable ? `<div class="card"><div class="spread"><h3 style="margin:0">Soru gir</h3><input type="date" id="sGun" value="${gun}" max="${iso(new Date())}" style="width:auto"/></div>
           <p class="muted small">Gün içinde çözdüğün soru sayılarını gir. Aynı güne tekrar girersen güncellenir.</p>
           <div class="soru-grid">${SORU_DERSLERI.map((d) => `<label class="soru-in"><span>${esc(d)}</span><input type="number" min="0" max="500" inputmode="numeric" data-d="${esc(d)}" value="${cur[d] || ""}"/></label>`).join("")}</div>
-          <div class="spread" style="margin-top:1rem"><b>Toplam: <span id="sTop">${byDate[gun]?.toplam || 0}</span></b><button class="btn btn-accent" id="sSave">Kaydet</button></div></div>`
-          : `<div class="card"><h3 style="margin-top:0">Gün detayı · ${trDate(gun)}</h3>${Object.entries(cur).map(([k, v]) => `<div class="mini-row"><span>${esc(k)}</span><b>${v}</b></div>`).join("") || `<div class="empty">Bu gün için kayıt yok.</div>`}</div>`}
+          <label class="soru-in" style="margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--line)"><span>⏱️ Toplam çalışma süresi (dakika)</span><input type="number" min="0" max="1200" step="5" inputmode="numeric" id="sSure" value="${byDate[gun]?.sure || ""}"/></label>
+          <div class="spread" style="margin-top:1rem"><b>Toplam: <span id="sTop">${byDate[gun]?.toplam || 0}</span> soru</b><button class="btn btn-accent" id="sSave">Kaydet</button></div></div>`
+          : `<div class="card"><h3 style="margin-top:0">Gün detayı · ${trDate(gun)}</h3>${byDate[gun]?.sure ? `<div class="mini-row"><span>⏱️ Çalışma süresi</span><b>${saat(byDate[gun].sure)}</b></div>` : ""}${Object.entries(cur).map(([k, v]) => `<div class="mini-row"><span>${esc(k)}</span><b>${v}</b></div>`).join("") || `<div class="empty">Bu gün için kayıt yok.</div>`}</div>`}
       </div>`;
     $$(".bar-col", el).forEach((b) => b.addEventListener("click", () => { gun = b.dataset.g; draw(); }));
     if (!editable) return;
@@ -152,7 +160,7 @@ export async function renderSorular(el, student, { editable, kocId }) {
     el.querySelector(".soru-grid").addEventListener("input", () => ($("#sTop", el).textContent = sum()));
     $("#sSave", el).onclick = async (e) => {
       const dersler = {}; $$("[data-d]", el).forEach((i) => { const v = Math.max(0, Number(i.value) || 0); if (v) dersler[i.dataset.d] = v; });
-      const data = { ogrenciId: student.id, kocId: student.kocId || null, tarih: gun, dersler, toplam: sum(), updatedAt: serverTimestamp() };
+      const data = { ogrenciId: student.id, kocId: student.kocId || null, tarih: gun, dersler, toplam: sum(), sure: Math.max(0, Number($("#sSure", el).value) || 0), updatedAt: serverTimestamp() };
       e.target.disabled = true;
       try { await setDoc(doc(db, "soruKayit", `${student.id}_${gun}`), data); byDate[gun] = data; toast("Kaydedildi."); draw(); }
       catch (err) { console.error(err); toast("Kaydedilemedi.", "err"); e.target.disabled = false; }

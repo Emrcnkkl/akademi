@@ -101,7 +101,7 @@ service cloud.firestore {
         || (isKoc() && isActive() && kocunOgrencisi(uid));
       allow write: if isAdmin()
         || (isActive() && request.auth.uid == uid
-            && request.resource.data.keys().hasOnly(['konular', 'hedef', 'updatedAt'])
+            && request.resource.data.keys().hasOnly(['konular', 'hedef', 'konuTekrar', 'kaynaklar', 'updatedAt'])
             && (!('konular' in request.resource.data) || request.resource.data.konular is map)
             && (!('hedef' in request.resource.data) || request.resource.data.hedef is map));
     }
@@ -115,6 +115,20 @@ service cloud.firestore {
         && request.resource.data.kocId == myUser().get('kocId', null)
         && request.resource.data.dersler is map && request.resource.data.toplam is number
         && request.resource.data.toplam >= 0 && request.resource.data.toplam <= 2000;
+      allow delete: if isAdmin() || (isActive() && resource.data.ogrenciId == request.auth.uid);
+    }
+
+    // ---------- hata defteri (öğrenci yazar, koç okur ve not ekler) ----------
+    match /hataDefteri/{id} {
+      allow read: if isAdmin()
+        || (isActive() && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid));
+      allow create: if isActive() && request.resource.data.ogrenciId == request.auth.uid
+        && request.resource.data.kocId == myUser().get('kocId', null)
+        && request.resource.data.aciklama is string && request.resource.data.aciklama.size() <= 2000;
+      allow update: if isAdmin()
+        || (isActive() && resource.data.ogrenciId == request.auth.uid && unchanged('ogrenciId') && unchanged('kocId') && unchanged('kocNotu'))
+        || (isKoc() && isActive() && resource.data.kocId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['kocNotu']));
       allow delete: if isAdmin() || (isActive() && resource.data.ogrenciId == request.auth.uid);
     }
 

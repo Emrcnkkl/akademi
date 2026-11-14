@@ -6,6 +6,7 @@ import {
   collection, query, where, getDocs, getDoc, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { renderKonular, renderHedef, renderSorular, renderChat, watchUnread, renderPaket } from "./panel-ext.js";
+import { denemeAnalizModal, renderAnalizOzet, renderHataDefteri, renderKaynaklar, renderOzet } from "./panel-ext2.js";
 import {
   $, $$, esc, fillBrand, toast, iso, monday, addDays, GUNLER, GUN_KISA, trDate, openModal,
   ALANLAR, DERSLER, GOREV_TUR, DERS_LISTESI, lineChart, tsStr,
@@ -154,7 +155,7 @@ function denemeModal(student, kocId, onSaved) {
   });
 }
 
-function renderDenemeler(el, list, { canDelete, onAdd, onDelete }) {
+function renderDenemeler(el, list, { canDelete, onAdd, onDelete, editable = canDelete, onRefresh }) {
   const sorted = [...list].sort((a, b) => a.tarih.localeCompare(b.tarih));
   const chart = (tur) => {
     const pts = sorted.filter((d) => d.tur === tur).slice(-12).map((d) => ({ x: trDate(d.tarih).slice(0, 5), y: d.toplam }));
@@ -163,13 +164,21 @@ function renderDenemeler(el, list, { canDelete, onAdd, onDelete }) {
   const allLabels = Object.fromEntries(Object.values(DERSLER).flat().map(([k, ad]) => [k, ad]));
   el.innerHTML = `<div class="spread" style="margin-bottom:1rem"><h3 style="margin:0">Denemeler</h3><button class="btn btn-accent btn-sm" id="addDeneme">+ Deneme ekle</button></div>
     <div class="grid-2" style="gap:1rem;margin-bottom:1rem">${chart("TYT")}${chart("AYT")}</div>
+    <div id="analizOzet" style="margin-bottom:1rem"></div>
     <div class="card table-wrap">${sorted.length ? `<table><thead><tr><th>Tarih</th><th>Tür</th><th>Yayın</th><th>Netler</th><th>Toplam</th><th></th></tr></thead><tbody>
       ${[...sorted].reverse().map((d) => `<tr><td>${trDate(d.tarih)}</td><td><span class="badge">${d.tur}${d.alan ? " " + d.alan : ""}</span></td><td>${esc(d.yayin || "-")}</td>
         <td class="small">${Object.entries(d.netler || {}).map(([k, v]) => `${allLabels[k] || k}: <b>${v.net}</b>`).join(" · ")}</td>
-        <td><b>${d.toplam}</b></td><td>${canDelete ? `<button class="btn btn-danger btn-sm" data-deldn="${d.id}">Sil</button>` : ""}</td></tr>`).join("")}
+        <td><b>${d.toplam}</b></td><td><div class="row" style="gap:.3rem;flex-wrap:nowrap">${d.analiz && Object.keys(d.analiz).length ? `<button class="btn btn-ghost btn-sm" data-an="${d.id}">🔍 Analiz ✓</button>` : `<button class="btn ${editable ? "btn-primary" : "btn-ghost"} btn-sm" data-an="${d.id}">${editable ? "🔍 Analiz et" : "Analiz yok"}</button>`}
+          ${canDelete ? `<button class="btn btn-danger btn-sm" data-deldn="${d.id}">Sil</button>` : ""}</div></td></tr>`).join("")}
       </tbody></table>` : `<div class="empty">Henüz deneme girilmedi.</div>`}</div>`;
   $("#addDeneme", el).addEventListener("click", onAdd);
   $$("[data-deldn]", el).forEach((b) => b.addEventListener("click", () => onDelete(b.dataset.deldn)));
+  renderAnalizOzet($("#analizOzet", el), list);
+  $$("[data-an]", el).forEach((b) => b.addEventListener("click", () => {
+    const d = list.find((x) => x.id === b.dataset.an);
+    if (!editable && !(d.analiz && Object.keys(d.analiz).length)) return toast("Öğrenci bu deneme için analiz girmemiş.", "err");
+    denemeAnalizModal(d, { editable, onSaved: onRefresh });
+  }));
 }
 
 function renderGorusmeler(el, list, { canAdd, onAdd }) {
@@ -190,11 +199,12 @@ async function StudentPanel(me) {
 
   root.innerHTML = `<div class="page-title">Merhaba ${esc((me.ad || "").split(" ")[0])} 👋</div>
     <p class="muted" style="margin-top:0">${coach ? `Koçun: <b>${esc(coach.ad)}</b>` : "Koç eşleştirmen yakında yapılacak."}</p>
-    <div class="tabs" id="sTabs"><button class="on" data-t="hafta">Bu hafta</button><button data-t="konu">Konular</button><button data-t="soru">Soru sayacı</button><button data-t="deneme">Denemeler</button><button data-t="mesaj">Mesajlar <span class="badge err hidden" id="sUnread"></span></button><button data-t="gorusme">Görüşmeler</button><button data-t="koc">Koçum</button></div>
+    <div class="tabs" id="sTabs"><button class="on" data-t="ozet">Özet</button><button data-t="hafta">Bu hafta</button><button data-t="konu">Konular</button><button data-t="soru">Soru & süre</button><button data-t="deneme">Denemeler</button><button data-t="hata">Hata defteri</button><button data-t="kaynak">Kaynaklar</button><button data-t="mesaj">Mesajlar <span class="badge err hidden" id="sUnread"></span></button><button data-t="gorusme">Görüşmeler</button><button data-t="koc">Koçum</button></div>
     <div id="sBody"></div>`;
   const body = $("#sBody");
-  let tab = "hafta", unsub = null;
-  $$("#sTabs button").forEach((b) => b.addEventListener("click", () => { $$("#sTabs button").forEach((x) => x.classList.remove("on")); b.classList.add("on"); tab = b.dataset.t; draw(); }));
+  let tab = "ozet", unsub = null;
+  const goTab = (t) => { $$("#sTabs button").forEach((x) => x.classList.toggle("on", x.dataset.t === t)); tab = t; draw(); scrollTo({ top: 0, behavior: "smooth" }); };
+  $$("#sTabs button").forEach((b) => b.addEventListener("click", () => goTab(b.dataset.t)));
   watchUnread({ me, asCoach: false }, (byStu) => {
     const n = Object.values(byStu).reduce((a, b) => a + b, 0), el = $("#sUnread");
     el.textContent = n; el.classList.toggle("hidden", !n || tab === "mesaj");
@@ -204,7 +214,15 @@ async function StudentPanel(me) {
     if (unsub) { unsub(); unsub = null; }
     body.innerHTML = `<div class="empty">Yükleniyor…</div>`;
     try {
-      if (tab === "hafta") {
+      if (tab === "ozet") {
+        const all = docs(await getDocs(query(collection(db, "gorevler"), where("ogrenciId", "==", me.id))));
+        await renderOzet(body, me, { coach, gorevler: all, goTab,
+          onToggleTask: async (id, val) => { try { await updateDoc(doc(db, "gorevler", id), { tamam: val }); } catch { toast("Güncellenemedi.", "err"); } } });
+      } else if (tab === "hata") {
+        await renderHataDefteri(body, me, { editable: true });
+      } else if (tab === "kaynak") {
+        await renderKaynaklar(body, me, { editable: true });
+      } else if (tab === "hafta") {
         const all = docs(await getDocs(query(collection(db, "gorevler"), where("ogrenciId", "==", me.id))));
         const list = weekTasks(all, weekStart);
         const pct = completion(list);
@@ -241,7 +259,7 @@ async function StudentPanel(me) {
         body.innerHTML = `<div id="hedefEl" style="margin-bottom:1rem"></div><div id="denEl"></div>`;
         await renderHedef($("#hedefEl"), me, list, { editable: true });
         renderDenemeler($("#denEl"), list, {
-          canDelete: true,
+          canDelete: true, editable: true, onRefresh: draw,
           onAdd: () => denemeModal(me, me.kocId, draw),
           onDelete: async (id) => { if (!confirm("Deneme silinsin mi?")) return; await deleteDoc(doc(db, "denemeler", id)); draw(); },
         });
@@ -309,7 +327,7 @@ async function CoachPanel(me) {
         <div class="muted small">${esc(st.sinif || "")} · ${esc(ALANLAR[st.alan] || "")}${st.hedef ? " · Hedef: " + esc(st.hedef) : ""}</div></div>
         <div class="row">${st.telefon ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(st.telefon)}">Öğrenci WhatsApp</a>` : ""}
         ${st.veliTelefon ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(st.veliTelefon)}">Veli WhatsApp</a>` : ""}</div></div></div>
-      <div class="tabs" id="cTabs">${[["program", "Program"], ["konu", "Konular"], ["soru", "Sorular"], ["deneme", "Denemeler"], ["mesaj", "Mesajlar"], ["gorusme", "Görüşmeler"]].map(([k, v]) => `<button data-t="${k}" class="${tab === k ? "on" : ""}">${v}${k === "mesaj" && unread[st.id] ? ` <span class="badge err">${unread[st.id]}</span>` : ""}</button>`).join("")}</div>
+      <div class="tabs" id="cTabs">${[["program", "Program"], ["konu", "Konular"], ["soru", "Soru & süre"], ["deneme", "Denemeler"], ["hata", "Hata defteri"], ["kaynak", "Kaynaklar"], ["mesaj", "Mesajlar"], ["gorusme", "Görüşmeler"]].map(([k, v]) => `<button data-t="${k}" class="${tab === k ? "on" : ""}">${v}${k === "mesaj" && unread[st.id] ? ` <span class="badge err">${unread[st.id]}</span>` : ""}</button>`).join("")}</div>
       <div id="cBody"></div>`;
     $$("#cTabs button").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.t; drawDetail(); }));
     drawTab(st);
@@ -345,11 +363,15 @@ async function CoachPanel(me) {
         await renderSorular(body, st, { editable: false, kocId: me.id });
       } else if (tab === "mesaj") {
         unsub = renderChat(body, { me, ogrenciId: st.id, kocId: me.id, karsiAd: st.ad, asCoach: true });
+      } else if (tab === "hata") {
+        await renderHataDefteri(body, st, { editable: false, kocId: me.id });
+      } else if (tab === "kaynak") {
+        await renderKaynaklar(body, st, { editable: false });
       } else if (tab === "deneme") {
         const list = docs(await getDocs(query(collection(db, "denemeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
         body.innerHTML = `<div id="hedefEl" style="margin-bottom:1rem"></div><div id="denEl"></div>`;
         await renderHedef($("#hedefEl"), st, list, { editable: false });
-        renderDenemeler($("#denEl"), list, { canDelete: false, onAdd: () => denemeModal(st, me.id, () => drawTab(st)), onDelete: () => {} });
+        renderDenemeler($("#denEl"), list, { canDelete: false, editable: false, onAdd: () => denemeModal(st, me.id, () => drawTab(st)), onDelete: () => {} });
       } else if (tab === "gorusme") {
         const list = docs(await getDocs(query(collection(db, "gorusmeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
         renderGorusmeler(body, list, { canAdd: true, onAdd: () => gorusmeModal(st) });

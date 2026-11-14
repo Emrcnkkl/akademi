@@ -335,3 +335,48 @@ footer a { color: var(--ink-2); text-decoration: none; margin-right: 1.2rem; }
 .mini-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .6rem .2rem; border-bottom: 1px solid #eceef2; font-size: .9rem; }
 .mini-row:last-child { border: 0; }
 .kicker { display: inline-block; font-size: .74rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); margin-bottom: .6rem; }
+
+/* =====================================================
+   YKS SÜRECİ: deneme analizi, hata defteri, kaynaklar, özet
+   ===================================================== */
+.konu .kdue { display: block; font-size: .68rem; color: var(--muted); font-weight: 600; margin-top: .1rem; }
+.konu .kdue.now { color: var(--brand); font-weight: 800; }
+
+.an-ders { border: 1px solid var(--line); border-radius: 14px; padding: .9rem 1rem; margin-bottom: .7rem; }
+.chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.chip { border: 1.5px solid var(--line); background: #fff; border-radius: 99px; padding: .3rem .7rem; font: inherit; font-size: .78rem; font-weight: 600; cursor: pointer; color: var(--ink-2); }
+.chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.chip[disabled] { cursor: default; }
+.stack-bar { display: flex; height: 14px; border-radius: 99px; overflow: hidden; background: #eceef2; margin-bottom: .6rem; }
+.stack-bar i { display: block; height: 100%; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: .4rem; vertical-align: middle; }
+.analiz-card h4, .card h4 { font-family: var(--display); }
+
+.hata-grid, .kaynak-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.hata { display: flex; flex-direction: column; gap: .25rem; padding: 1.1rem; }
+.hata.ok { opacity: .7; }
+.hata h4 { margin: .5rem 0 .1rem; font-size: 1.02rem; }
+.hata p { margin: .4rem 0 0; font-size: .9rem; white-space: pre-wrap; color: var(--ink-2); }
+.koc-not { background: var(--accent-soft); color: #5c1010; border-radius: 10px; padding: .55rem .7rem; font-size: .84rem; margin-top: .5rem; }
+.kaynak { padding: 1.1rem; }
+.kaynak h4 { margin: .6rem 0; font-size: 1rem; }
+
+.ozet-top { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.ozet-cd { border-radius: var(--radius); padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: .9rem; color: #fff;
+  background: radial-gradient(300px 150px at 0% 0%, rgba(155,0,0,.6), transparent 70%), var(--ink); }
+.ozet-cd b { font-family: var(--display); font-size: 2.6rem; line-height: 1; }
+.ozet-cd span { font-weight: 700; line-height: 1.2; }
+.ozet-cd small { color: #b9bfd6; font-weight: 600; }
+.ozet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.ozet-grid .card h3 { font-size: 1.08rem; }
+.ozet-task { display: flex; gap: .6rem; align-items: flex-start; padding: .6rem .2rem; border-bottom: 1px solid #eceef2; cursor: pointer; font-size: .92rem; }
+.ozet-task:last-child { border: 0; }
+.ozet-task input { width: auto; margin-top: .25rem; }
+.ozet-task.done b { text-decoration: line-through; color: var(--muted); }
+.rutin { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.rutin-item { display: flex; align-items: center; gap: .7rem; text-align: left; border: 1px solid var(--line); background: #fafafb; border-radius: 12px; padding: .7rem .8rem; font: inherit; font-size: .9rem; cursor: pointer; }
+.rutin-item:hover { border-color: var(--ink); background: #fff; }
+.rutin-item .badge { flex: none; min-width: 74px; text-align: center; }
+.rutin-item span:nth-child(2) { flex: 1; }
+.rutin-item .go { color: var(--brand); font-weight: 800; }
+@media (max-width: 960px) { .ozet-top { grid-template-columns: 1fr 1fr; } .ozet-grid, .rutin { grid-template-columns: 1fr; } }
