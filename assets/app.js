@@ -2,8 +2,8 @@
 // Adresler: #/ (ana sayfa), #/koclar, #/araclar, #/tyt-net, #/ayt-net, #/yks-sayac, #/pomodoro, #/hakkimizda, #/sss, #/iletisim
 // Bölüm bağlantıları (#kayit, #fiyat, #koc-ol...) ilgili sekmeyi açıp oraya kaydırır.
 import { setActive, observeReveal } from "./layout.js";
-import { BRAND, SINAV } from "./config.js";
-import { $, $$, toast, DERSLER } from "./ui.js";
+import { BRAND, SINAV, HIKAYELER } from "./config.js";
+import { $, $$, toast, esc, DERSLER } from "./ui.js";
 import { renderCoaches, bindCoachFilter, bindMentorForm, bindStudentForm, bindFaq } from "./site.js";
 
 // ================= ANA SAYFA =================
@@ -29,6 +29,16 @@ function initHome(root) {
   }));
   bindStudentForm();
   bindFaq(root);
+  // Instagram butonu
+  root.querySelectorAll("[data-insta-btn]").forEach((a) => (a.href = BRAND.instagram));
+  // Başarı hikâyeleri (config.js → HIKAYELER)
+  if (HIKAYELER.length) {
+    q("#hikayeler").classList.remove("hidden");
+    q("#storyGrid").innerHTML = HIKAYELER.map((h) => `<div class="story metal-card reveal">
+      <div class="story-top"><span class="avatar">${esc(h.ad.split(" ").map((p) => p[0]).join("").slice(0, 2))}</span><div><b>${esc(h.ad)}</b><div class="muted small">${esc(h.hedef || "")}${h.yil ? " · " + esc(h.yil) : ""}</div></div></div>
+      ${h.sonuc ? `<div class="story-res">${esc(h.sonuc)}</div>` : ""}
+      ${h.metin ? `<p>“${esc(h.metin)}”</p>` : ""}${h.koc ? `<span class="muted small">Koçu: ${esc(h.koc)}</span>` : ""}</div>`).join("");
+  }
 }
 
 // ================= DİĞER SEKMELER =================

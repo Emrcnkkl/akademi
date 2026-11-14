@@ -3,9 +3,10 @@ import {
   onAuthStateChanged, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  collection, query, orderBy, getDocs, getDoc, doc, updateDoc, deleteDoc, serverTimestamp, writeBatch, deleteField,
+  collection, query, orderBy, where, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, deleteField,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { $, $$, esc, fillBrand, toast, openModal, tsStr, trDate, ALANLAR, randomPassword } from "./ui.js";
+import { $, $$, esc, fillBrand, toast, openModal, tsStr, trDate, ALANLAR, randomPassword, iso, monday, addDays } from "./ui.js";
+import { BRAND } from "./config.js";
 
 fillBrand();
 const ROL_ADI = { ogrenci: "Öğrenci", koc: "Koç", admin: "Yönetici" };
@@ -14,7 +15,7 @@ const docs = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 const initials = (ad = "") => ad.split(" ").filter(Boolean).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 const alanAdi = (a) => ALANLAR[a] || (a === "BELIRSIZ" ? "Belirsiz" : a || "-");
 
-let users = [], ogrBas = [], menBas = [], raporlar = [], tab = "genel";
+let users = [], ogrBas = [], menBas = [], raporlar = [], odemeler = [], haftaGorev = [], gorusme7 = [], tab = "genel";
 const waLink = (tel) => { let t = String(tel || "").replace(/\D/g, ""); if (t.startsWith("0")) t = "9" + t; if (t.length === 10) t = "90" + t; return `https://wa.me/${t}`; };
 const koclar = () => users.filter((u) => u.rol === "koc" && u.aktif !== false);
 const ogrenciSayisi = (kocId) => users.filter((u) => u.rol === "ogrenci" && u.kocId === kocId && u.aktif !== false).length;
@@ -43,6 +44,14 @@ async function loadAll() {
     getDocs(query(collection(db, "mentorBasvurulari"), orderBy("createdAt", "desc"))),
     getDocs(collection(db, "veliRaporlari")),
   ]);
+  // ödemeler + koç performansı için bu haftanın görevleri ve son 7 günün görüşmeleri
+  const pazartesi = iso(monday()), pazar = iso(addDays(monday(), 6)), yediGun = iso(addDays(new Date(), -7));
+  const [od, hg, gr] = await Promise.all([
+    getDocs(collection(db, "odemeler")).catch(() => ({ docs: [] })),
+    getDocs(query(collection(db, "gorevler"), where("tarih", ">=", pazartesi), where("tarih", "<=", pazar))).catch(() => ({ docs: [] })),
+    getDocs(query(collection(db, "gorusmeler"), where("tarih", ">=", yediGun))).catch(() => ({ docs: [] })),
+  ]);
+  odemeler = docs(od); haftaGorev = docs(hg); gorusme7 = docs(gr);
   raporlar = docs(r).sort((a, b) => (b.hafta || "").localeCompare(a.hafta || "") || (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
   const nr = raporlar.filter((x) => x.durum === "bekliyor").length;
   $("#cntRap").textContent = nr || ""; $("#cntRap").classList.toggle("hidden", !nr);
@@ -51,6 +60,8 @@ async function loadAll() {
   const no = ogrBas.filter((x) => x.durum === "yeni").length, nm = menBas.filter((x) => x.durum === "yeni").length;
   $("#cntOgr").textContent = no || ""; $("#cntOgr").classList.toggle("hidden", !no);
   $("#cntMen").textContent = nm || ""; $("#cntMen").classList.toggle("hidden", !nm);
+  const uyari = users.filter((u) => u.rol === "ogrenci" && u.aktif !== false).filter((u) => { const k = kalanGun(sonDonem(u.id)); return k !== null && k <= 7; }).length;
+  $("#cntOde").textContent = uyari || ""; $("#cntOde").classList.toggle("hidden", !uyari);
 }
 async function reload() { await loadAll(); draw(); }
 
@@ -60,32 +71,134 @@ function draw() {
   else if (tab === "ogrBas") drawBasvuru(body, "ogrenciBasvurulari", ogrBas, "ogrenci");
   else if (tab === "mentorBas") drawBasvuru(body, "mentorBasvurulari", menBas, "koc");
   else if (tab === "rapor") drawRaporlar(body);
+  else if (tab === "odeme") drawOdemeler(body);
   else drawUsers(body);
 }
 
 // ============ GENEL BAKIŞ ============
+const TL = (n) => (Number(n) || 0).toLocaleString("tr-TR") + " ₺";
+function sonDonem(ogrId) { return odemeler.filter((o) => o.ogrenciId === ogrId).sort((a, b) => (b.bitis || "").localeCompare(a.bitis || ""))[0]; }
+function kalanGun(o) { return o ? Math.ceil((new Date(o.bitis + "T23:59") - new Date()) / 86400000) : null; }
+
 function drawGenel(body) {
   const ogr = users.filter((u) => u.rol === "ogrenci" && u.aktif !== false);
   const kocsuz = ogr.filter((u) => !u.kocId);
+  const ay = iso(new Date()).slice(0, 7);
+  const buAyGelir = odemeler.filter((o) => o.durum === "odendi" && (o.odemeTarihi || o.baslangic || "").startsWith(ay)).reduce((s, o) => s + (Number(o.tutar) || 0), 0);
+  const bekleyen = odemeler.filter((o) => o.durum !== "odendi").reduce((s, o) => s + (Number(o.tutar) || 0), 0);
+  const otuzGun = Date.now() - 30 * 86400000;
+  const yeni30 = ogrBas.filter((x) => (x.createdAt?.toMillis?.() || 0) > otuzGun).length;
+  const donusum = ogrBas.length ? Math.round((100 * ogrBas.filter((x) => x.durum === "kabul").length) / ogrBas.length) : 0;
+  const yakinda = ogr.filter((u) => { const k = kalanGun(sonDonem(u.id)); return k !== null && k >= 0 && k <= 7; }).length;
+  const bitmis = ogr.filter((u) => { const k = kalanGun(sonDonem(u.id)); return k === null || k < 0; }).length;
   body.innerHTML = `<div class="stats">
       <div class="stat"><div class="n">${ogr.length}</div><div class="l">Aktif öğrenci</div></div>
       <div class="stat"><div class="n">${koclar().length}</div><div class="l">Aktif koç</div></div>
-      <div class="stat"><div class="n">${ogrBas.filter((x) => x.durum === "yeni").length}</div><div class="l">Yeni öğrenci başvurusu</div></div>
-      <div class="stat"><div class="n">${menBas.filter((x) => x.durum === "yeni").length}</div><div class="l">Yeni koç başvurusu</div></div>
+      <div class="stat"><div class="n">${TL(buAyGelir)}</div><div class="l">Bu ay tahsilat</div></div>
+      <div class="stat"><div class="n">${TL(bekleyen)}</div><div class="l">Bekleyen ödeme</div></div>
     </div>
-    <div class="grid-2" style="gap:1rem;align-items:start">
-      <div class="card"><h3>Koç yükü</h3>${koclar().length ? `<table><thead><tr><th>Koç</th><th>Alan</th><th>Öğrenci</th></tr></thead><tbody>
-        ${koclar().map((k) => { const n = ogrenciSayisi(k.id), cap = k.kapasite || 0;
-          return `<tr><td><b>${esc(k.ad)}</b><div class="muted small">${esc(k.universite || "")}</div></td><td>${esc(k.alan || "-")}</td>
-          <td><span class="badge ${cap && n >= cap ? "err" : "ok"}">${n}${cap ? " / " + cap : ""}</span></td></tr>`; }).join("")}</tbody></table>` : `<div class="empty">Henüz koç yok.</div>`}</div>
-      <div class="card"><h3>Koçu olmayan öğrenciler</h3>${kocsuz.length ? kocsuz.map((s) => `<div class="spread note-item">
+    <div class="stats">
+      <div class="stat"><div class="n">${yeni30}</div><div class="l">Son 30 gün öğrenci başvurusu</div></div>
+      <div class="stat"><div class="n">%${donusum}</div><div class="l">Başvurudan kayda dönüşüm</div></div>
+      <div class="stat"><div class="n">${yakinda}</div><div class="l">7 gün içinde dönemi bitecek</div></div>
+      <div class="stat"><div class="n">${bitmis}</div><div class="l">Dönemi bitmiş / kaydı yok</div></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem"><div class="spread"><h3 style="margin:0">Koç performansı</h3><span class="muted small">Bu hafta · son 7 gün</span></div>
+      ${koclar().length ? `<div class="table-wrap"><table style="margin-top:.8rem"><thead><tr><th>Koç</th><th>Öğrenci</th><th>Görev tamamlama (bu hafta)</th><th>Görüşme notu (7 gün)</th><th>Bekleyen veli raporu</th></tr></thead><tbody>
+        ${koclar().map((k) => {
+          const n = ogrenciSayisi(k.id), cap = k.kapasite || 0;
+          const g = haftaGorev.filter((t) => t.kocId === k.id), pct = g.length ? Math.round((100 * g.filter((t) => t.tamam).length) / g.length) : null;
+          const gor = gorusme7.filter((x) => x.kocId === k.id).length;
+          const rap = raporlar.filter((r) => r.kocId === k.id && r.durum === "bekliyor").length;
+          return `<tr><td><b>${esc(k.ad)}</b><div class="muted small">${esc(k.universite || "")} · ${esc(k.alan || "-")}</div></td>
+            <td><span class="badge ${cap && n >= cap ? "err" : "ok"}">${n}${cap ? " / " + cap : ""}</span></td>
+            <td>${pct === null ? `<span class="muted small">Görev yazılmamış</span>` : `<div class="row" style="gap:.5rem"><div class="progress" style="width:120px"><i style="width:${pct}%;${pct < 50 ? "background:var(--warn)" : ""}"></i></div><b>%${pct}</b><span class="muted small">(${g.length} görev)</span></div>`}</td>
+            <td>${gor < n ? `<span class="badge warn">${gor} / ${n}</span>` : `<span class="badge ok">${gor} / ${n}</span>`}</td>
+            <td>${rap ? `<span class="badge warn">${rap}</span>` : "–"}</td></tr>`; }).join("")}</tbody></table></div>` : `<div class="empty">Henüz koç yok.</div>`}
+      <p class="muted small" style="margin:.8rem 0 0">Görüşme notu sütunu: son 7 günde girilen görüşme notu / öğrenci sayısı. Her öğrenciyle haftada bir görüşme beklenir.</p></div>
+    <div class="card"><h3>Koçu olmayan öğrenciler</h3>${kocsuz.length ? kocsuz.map((s) => `<div class="spread note-item">
           <div><b>${esc(s.ad)}</b><div class="muted small">${esc(s.sinif || "")} · ${alanAdi(s.alan)}</div></div>
-          <select data-assign="${s.id}" style="width:auto"><option value="">Koç ata…</option>${kocOptions(null, s.alan)}</select></div>`).join("") : `<div class="empty">Tüm öğrenciler eşleşmiş 🎉</div>`}</div>
-    </div>`;
+          <select data-assign="${s.id}" style="width:auto"><option value="">Koç ata…</option>${kocOptions(null, s.alan)}</select></div>`).join("") : `<div class="empty">Tüm öğrenciler eşleşmiş 🎉</div>`}</div>`;
   $$("[data-assign]", body).forEach((sel) => sel.addEventListener("change", async () => {
     if (!sel.value) return;
     try { await updateDoc(doc(db, "users", sel.dataset.assign), { kocId: sel.value }); toast("Koç atandı."); reload(); }
     catch (err) { console.error(err); toast("Atanamadı.", "err"); }
+  }));
+}
+
+// ============ ÖDEMELER / DÖNEMLER ============
+function drawOdemeler(body) {
+  let filtre = body.dataset.of || "hepsi";
+  const ogr = users.filter((u) => u.rol === "ogrenci" && u.aktif !== false);
+  const satir = (u) => { const o = sonDonem(u.id), k = kalanGun(o);
+    const durum = !o ? "yok" : k < 0 ? "bitti" : k <= 7 ? "yakin" : o.durum !== "odendi" ? "bekliyor" : "aktif";
+    return { u, o, k, durum }; };
+  const render = () => {
+    const rows = ogr.map(satir).filter((r) => filtre === "hepsi" || r.durum === filtre || (filtre === "bekliyor" && r.o?.durum !== "odendi" && r.o))
+      .sort((a, b) => (a.k ?? -999) - (b.k ?? -999));
+    const badge = { yok: ["Kayıt yok", "gray"], bitti: ["Dönem bitti", "err"], yakin: ["Yakında bitiyor", "warn"], bekliyor: ["Ödeme bekliyor", "warn"], aktif: ["Aktif", "ok"] };
+    body.innerHTML = `<div class="spread" style="margin-bottom:1rem"><div class="seg" id="ofSeg">
+        ${[["hepsi", "Hepsi"], ["yakin", "Yakında bitiyor"], ["bitti", "Bitti"], ["bekliyor", "Ödeme bekliyor"], ["yok", "Kayıt yok"]].map(([k, v]) => `<button data-f="${k}" class="${filtre === k ? "on" : ""}">${v}</button>`).join("")}</div>
+        <span class="muted small">Her öğrencinin son dönemi gösterilir. Varsayılan dönem 4 hafta.</span></div>
+      <div class="card table-wrap">${rows.length ? `<table><thead><tr><th>Öğrenci</th><th>Koç</th><th>Son dönem</th><th>Kalan</th><th>Tutar</th><th>Durum</th><th></th></tr></thead><tbody>
+        ${rows.map(({ u, o, k, durum }) => { const koc = users.find((x) => x.id === u.kocId);
+          return `<tr><td><b>${esc(u.ad)}</b><div class="muted small">${esc(u.telefon || "")}</div></td><td class="small">${esc(koc?.ad || "–")}</td>
+          <td class="small">${o ? `${trDate(o.baslangic)} – ${trDate(o.bitis)}<div class="muted">${esc(o.paket || "")}</div>` : "–"}</td>
+          <td>${k === null ? "–" : k < 0 ? `<b style="color:var(--err)">${-k} gün geçti</b>` : `<b>${k} gün</b>`}</td>
+          <td>${o ? TL(o.tutar) : "–"}</td>
+          <td><span class="badge ${badge[durum][1]}">${badge[durum][0]}</span>${o && o.durum !== "odendi" ? ` <span class="badge warn">Ödenmedi</span>` : ""}</td>
+          <td><div class="row" style="gap:.4rem">${o && o.durum !== "odendi" ? `<button class="btn btn-primary btn-sm" data-odendi="${o.id}">Ödendi ✓</button>` : ""}
+            <button class="btn btn-accent btn-sm" data-yeni="${u.id}">+ Dönem</button><button class="btn btn-ghost btn-sm" data-gecmis="${u.id}">Geçmiş</button>
+            ${u.telefon || u.veliTelefon ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(u.veliTelefon || u.telefon)}?text=${encodeURIComponent(`Merhaba, ${u.ad.split(" ")[0]} için 24 Akademi koçluk döneminin ${o ? trDate(o.bitis) + " tarihinde bittiğini" : "başlamadığını"} hatırlatmak isteriz. Yenilemek için bize yazabilirsiniz.`)}">Hatırlat</a>` : ""}</div></td></tr>`; }).join("")}
+        </tbody></table>` : `<div class="empty">Kayıt yok.</div>`}</div>`;
+    $$("#ofSeg button", body).forEach((b) => (b.onclick = () => { filtre = b.dataset.f; body.dataset.of = filtre; render(); }));
+    $$("[data-odendi]", body).forEach((b) => (b.onclick = async () => {
+      try { await updateDoc(doc(db, "odemeler", b.dataset.odendi), { durum: "odendi", odemeTarihi: iso(new Date()) }); toast("Ödendi olarak işaretlendi."); await reload(); }
+      catch (e) { console.error(e); toast("Güncellenemedi.", "err"); }
+    }));
+    $$("[data-yeni]", body).forEach((b) => (b.onclick = () => donemModal(users.find((x) => x.id === b.dataset.yeni))));
+    $$("[data-gecmis]", body).forEach((b) => (b.onclick = () => gecmisModal(users.find((x) => x.id === b.dataset.gecmis))));
+  };
+  render();
+}
+
+function donemModal(u) {
+  const son = sonDonem(u.id);
+  const bas = son && kalanGun(son) >= -3 ? iso(addDays(new Date(son.bitis + "T12:00"), 1)) : iso(new Date());
+  const m = openModal(`<h3>Yeni dönem · ${esc(u.ad)}</h3>
+    <div class="grid-2"><div class="field"><label>Paket</label><select id="d_p"><option>Birebir Koçluk</option><option>Koçluk + Özel Ders</option><option>Özel Ders</option><option>Diğer</option></select></div>
+      <div class="field"><label>Tutar (₺)</label><input id="d_t" type="number" min="0" step="50" value="${esc(String(son?.tutar || BRAND.baslangicFiyat).replace(/\D/g, ""))}"/></div></div>
+    <div class="grid-3"><div class="field"><label>Başlangıç</label><input id="d_b" type="date" value="${bas}"/></div>
+      <div class="field"><label>Süre</label><select id="d_s"><option value="28">4 hafta</option><option value="56">8 hafta</option><option value="84">12 hafta</option></select></div>
+      <div class="field"><label>Bitiş</label><input id="d_e" type="date"/></div></div>
+    <div class="grid-2"><div class="field"><label>Ödeme durumu</label><select id="d_d"><option value="bekliyor">Bekliyor</option><option value="odendi">Ödendi</option></select></div>
+      <div class="field"><label>Not</label><input id="d_n" maxlength="200" placeholder="Örn. havale, taksit 1/2"/></div></div>
+    <button class="btn btn-accent" id="d_save">Kaydet</button>`);
+  const el = m.el;
+  const calc = () => { const b = $("#d_b", el).value; if (b) $("#d_e", el).value = iso(addDays(new Date(b + "T12:00"), Number($("#d_s", el).value) - 1)); };
+  $("#d_b", el).onchange = calc; $("#d_s", el).onchange = calc; calc();
+  $("#d_save", el).onclick = async (e) => {
+    const data = { ogrenciId: u.id, kocId: u.kocId || null, paket: $("#d_p", el).value, tutar: Number($("#d_t", el).value) || 0,
+      baslangic: $("#d_b", el).value, bitis: $("#d_e", el).value, durum: $("#d_d", el).value, not: $("#d_n", el).value.trim(), createdAt: serverTimestamp() };
+    if (data.durum === "odendi") data.odemeTarihi = iso(new Date());
+    if (!data.baslangic || !data.bitis) return toast("Tarihleri seç.", "err");
+    e.target.disabled = true;
+    try { await addDoc(collection(db, "odemeler"), data); m.close(); toast("Dönem eklendi."); await reload(); }
+    catch (err) { console.error(err); toast("Kaydedilemedi.", "err"); e.target.disabled = false; }
+  };
+}
+
+function gecmisModal(u) {
+  const list = odemeler.filter((o) => o.ogrenciId === u.id).sort((a, b) => (b.baslangic || "").localeCompare(a.baslangic || ""));
+  const toplam = list.filter((o) => o.durum === "odendi").reduce((s, o) => s + (Number(o.tutar) || 0), 0);
+  const m = openModal(`<h3>Ödeme geçmişi · ${esc(u.ad)}</h3><p class="muted small">Toplam tahsilat: <b>${TL(toplam)}</b></p>
+    ${list.length ? `<table><thead><tr><th>Dönem</th><th>Paket</th><th>Tutar</th><th>Durum</th><th></th></tr></thead><tbody>
+      ${list.map((o) => `<tr><td class="small">${trDate(o.baslangic)} – ${trDate(o.bitis)}${o.not ? `<div class="muted">${esc(o.not)}</div>` : ""}</td><td class="small">${esc(o.paket || "")}</td><td>${TL(o.tutar)}</td>
+        <td>${o.durum === "odendi" ? `<span class="badge ok">Ödendi</span>` : `<span class="badge warn">Bekliyor</span>`}</td><td><button class="btn btn-danger btn-sm" data-sil="${o.id}">Sil</button></td></tr>`).join("")}</tbody></table>`
+      : `<div class="empty">Kayıt yok.</div>`}`, { wide: true });
+  $$("[data-sil]", m.el).forEach((b) => (b.onclick = async () => {
+    if (!confirm("Bu dönem kaydı silinsin mi?")) return;
+    try { await deleteDoc(doc(db, "odemeler", b.dataset.sil)); m.close(); toast("Silindi."); await reload(); } catch { toast("Silinemedi.", "err"); }
   }));
 }
 

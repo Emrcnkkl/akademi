@@ -30,6 +30,10 @@ export const KOCLAR = [
   { ad: "İrem S.",       okul: "Boğaziçi Üni. – Mütercim Tercümanlık", alan: "DIL", derece: "DİL-97",    foto: "", ornek: true },
 ];
 
+// Başarı hikâyeleri: SADECE gerçek öğrencilerin izniyle ekleyin. Liste boşken ana sayfada bu bölüm görünmez.
+// Örnek: { ad: "Ayşe Y.", sonuc: "TYT 68 → 97 net", hedef: "İTÜ Bilgisayar Müh. kazandı", yil: 2027, metin: "Kısa yorum…", koc: "Mert Tekin" }
+export const HIKAYELER = [];
+
 // Firebase Console → Proje ayarları → Web uygulaması → config
 export const firebaseConfig = {
   apiKey: "AIzaSyA8WunLwtkMr9St14j7iRRTb1td8Gil7Ks",

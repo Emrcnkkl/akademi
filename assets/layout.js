@@ -33,7 +33,7 @@ const header = `
         <a role="menuitem" href="${H}#/araclar" data-v="araclar" class="dd-all">Tüm araçlar →</a>
       </div>
     </div>
-    <a href="${H}#fiyat">Fiyat</a>
+    <a href="${H}#/rehber" data-v="rehber" class="${on("rehber")}">Rehber</a>
     <a href="${H}#/hakkimizda" data-v="hakkimizda" class="${on("hakkimizda")}">Hakkımızda</a>
     <a href="${H}#/sss" data-v="sss" class="${on("sss")}">SSS</a>
     <a href="${H}#/iletisim" data-v="iletisim" class="${on("iletisim")}">İletişim</a>
@@ -50,7 +50,7 @@ const footer = `
       <a href="${H}#/" class="logo" style="margin-bottom:.8rem"><img src="assets/logo-24-sm.png" alt="24 Akademi" style="height:52px;width:auto" /></a>
       <p class="muted small" style="max-width:280px">Derece yapmış üniversite öğrencilerinden birebir YKS koçluğu. ${BRAND.slogan}.</p>
     </div>
-    <div><h5>Platform</h5><a href="${H}#nasil">Nasıl çalışır</a><a href="${H}#panel">Panel</a><a href="${H}#fiyat">Fiyat</a><a href="${H}#/sss">SSS</a></div>
+    <div><h5>Platform</h5><a href="${H}#nasil">Nasıl çalışır</a><a href="${H}#panel">Panel</a><a href="${H}#fiyat">Fiyat</a><a href="${H}#/rehber">Rehber</a><a href="${H}#/sss">SSS</a></div>
     <div><h5>YKS Araçları</h5>${ARACLAR.map((a) => `<a href="${H}${a.href}">${a.ad}</a>`).join("")}</div>
     <div><h5>Kurumsal</h5><a href="${H}#/hakkimizda">Hakkımızda</a><a href="${H}#/koclar">Koçlarımız</a><a href="${H}#koc-ol">Koç ol</a><a href="${H}#/iletisim">İletişim</a><a href="portal.html">Panele giriş</a></div>
   </div>
@@ -109,7 +109,8 @@ observeReveal();
 
 // Sekme değişince menüdeki aktif bağlantıyı güncelle (tek sayfa yönlendirici çağırır)
 export function setActive(view) {
-  $$("#navLinks [data-v]").forEach((a) => a.classList.toggle("active", a.dataset.v === view));
+  const v = view.startsWith("rehber") ? "rehber" : view;
+  $$("#navLinks [data-v]").forEach((a) => a.classList.toggle("active", a.dataset.v === v));
   $("#ddTools").classList.toggle("active", ARACLAR.some((a) => a.key === view) || view === "araclar");
   setDD(false); setMenu(false);
 }

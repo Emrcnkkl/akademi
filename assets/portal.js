@@ -5,6 +5,7 @@ import {
 import {
   collection, query, where, getDocs, getDoc, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { renderKonular, renderHedef, renderSorular, renderChat, watchUnread, renderPaket } from "./panel-ext.js";
 import {
   $, $$, esc, fillBrand, toast, iso, monday, addDays, GUNLER, GUN_KISA, trDate, openModal,
   ALANLAR, DERSLER, GOREV_TUR, DERS_LISTESI, lineChart, tsStr,
@@ -189,13 +190,18 @@ async function StudentPanel(me) {
 
   root.innerHTML = `<div class="page-title">Merhaba ${esc((me.ad || "").split(" ")[0])} 👋</div>
     <p class="muted" style="margin-top:0">${coach ? `Koçun: <b>${esc(coach.ad)}</b>` : "Koç eşleştirmen yakında yapılacak."}</p>
-    <div class="tabs" id="sTabs"><button class="on" data-t="hafta">Bu hafta</button><button data-t="deneme">Denemeler</button><button data-t="gorusme">Görüşmeler</button><button data-t="koc">Koçum</button></div>
+    <div class="tabs" id="sTabs"><button class="on" data-t="hafta">Bu hafta</button><button data-t="konu">Konular</button><button data-t="soru">Soru sayacı</button><button data-t="deneme">Denemeler</button><button data-t="mesaj">Mesajlar <span class="badge err hidden" id="sUnread"></span></button><button data-t="gorusme">Görüşmeler</button><button data-t="koc">Koçum</button></div>
     <div id="sBody"></div>`;
   const body = $("#sBody");
-  let tab = "hafta";
+  let tab = "hafta", unsub = null;
   $$("#sTabs button").forEach((b) => b.addEventListener("click", () => { $$("#sTabs button").forEach((x) => x.classList.remove("on")); b.classList.add("on"); tab = b.dataset.t; draw(); }));
+  watchUnread({ me, asCoach: false }, (byStu) => {
+    const n = Object.values(byStu).reduce((a, b) => a + b, 0), el = $("#sUnread");
+    el.textContent = n; el.classList.toggle("hidden", !n || tab === "mesaj");
+  });
 
   async function draw() {
+    if (unsub) { unsub(); unsub = null; }
     body.innerHTML = `<div class="empty">Yükleniyor…</div>`;
     try {
       if (tab === "hafta") {
@@ -223,9 +229,18 @@ async function StudentPanel(me) {
             catch { toast("Kaydedilemedi.", "err"); }
           };
         }));
+      } else if (tab === "konu") {
+        await renderKonular(body, me, { editable: true });
+      } else if (tab === "soru") {
+        await renderSorular(body, me, { editable: true });
+      } else if (tab === "mesaj") {
+        $("#sUnread").classList.add("hidden");
+        unsub = renderChat(body, { me, ogrenciId: me.id, kocId: me.kocId, karsiAd: coach?.ad, asCoach: false });
       } else if (tab === "deneme") {
         const list = docs(await getDocs(query(collection(db, "denemeler"), where("ogrenciId", "==", me.id))));
-        renderDenemeler(body, list, {
+        body.innerHTML = `<div id="hedefEl" style="margin-bottom:1rem"></div><div id="denEl"></div>`;
+        await renderHedef($("#hedefEl"), me, list, { editable: true });
+        renderDenemeler($("#denEl"), list, {
           canDelete: true,
           onAdd: () => denemeModal(me, me.kocId, draw),
           onDelete: async (id) => { if (!confirm("Deneme silinsin mi?")) return; await deleteDoc(doc(db, "denemeler", id)); draw(); },
@@ -239,6 +254,8 @@ async function StudentPanel(me) {
             <div class="coach-tag"><b>${esc(coach.ad)}</b><span class="coach-school">${esc(coach.universite || "")}${coach.bolum ? " – " + esc(coach.bolum) : ""}</span><span class="coach-rank">${esc(coach.alan || "")}${coach.siralama ? "-" + Number(coach.siralama).toLocaleString("tr-TR") : ""}</span></div></div></div>
           ${coach.telefon ? `<a class="btn btn-accent" style="margin-top:1rem" target="_blank" rel="noopener" href="${waLink(coach.telefon)}">WhatsApp'tan yaz</a>` : ""}`
           : `<div class="card empty">Henüz bir koça atanmadın. Ekibimiz en kısa sürede eşleştirme yapacak.</div>`;
+        body.innerHTML = `<div class="grid-2" style="gap:1.5rem;align-items:start"><div>${body.innerHTML}</div><div id="paketEl"></div></div>`;
+        await renderPaket($("#paketEl"), me);
       }
     } catch (err) { console.error(err); body.innerHTML = `<div class="card empty">Veriler yüklenemedi (${esc(err.code || "")}).</div>`; }
   }
@@ -249,7 +266,7 @@ async function StudentPanel(me) {
 async function CoachPanel(me) {
   const root = $("#root");
   let weekStart = monday();
-  let students = [], allTasks = [], selId = null, tab = "program";
+  let students = [], allTasks = [], selId = null, tab = "program", unsub = null, unread = {};
 
   async function loadBase() {
     students = docs(await getDocs(query(collection(db, "users"), where("kocId", "==", me.id))))
@@ -266,7 +283,7 @@ async function CoachPanel(me) {
         <div class="stat"><div class="n">${students.length}</div><div class="l">Aktif öğrenci</div></div>
         <div class="stat"><div class="n">%${avg}</div><div class="l">Bu hafta ort. tamamlama</div></div>
         <div class="stat"><div class="n">${thisWeek.length}</div><div class="l">Bu haftaki görev</div></div>
-        <div class="stat"><div class="n">${notes}</div><div class="l">Bu hafta öğrenci notu</div></div>
+        <div class="stat"><div class="n" id="unTot">0</div><div class="l">Okunmamış mesaj</div></div>
       </div>
       ${students.length ? `<div class="coach-layout"><div class="stu-list" id="stuList"></div><div id="detail"></div></div>`
         : `<div class="card empty">Henüz sana atanmış öğrenci yok. Eşleştirmeyi yönetici yapar.</div>`}`;
@@ -279,7 +296,7 @@ async function CoachPanel(me) {
     const thisWeek = weekTasks(allTasks, monday());
     $("#stuList").innerHTML = students.map((s) => {
       const pct = completion(thisWeek.filter((t) => t.ogrenciId === s.id));
-      return `<button class="stu ${s.id === selId ? "on" : ""}" data-s="${s.id}"><b>${esc(s.ad)}</b><span class="small">${esc(s.sinif || "")} · ${esc(ALANLAR[s.alan] || s.alan || "")}</span>
+      return `<button class="stu ${s.id === selId ? "on" : ""}" data-s="${s.id}"><b>${esc(s.ad)}${unread[s.id] ? ` <span class="badge err">${unread[s.id]}</span>` : ""}</b><span class="small">${esc(s.sinif || "")} · ${esc(ALANLAR[s.alan] || s.alan || "")}</span>
         <div class="progress"><i style="width:${pct}%"></i></div><span class="small">Bu hafta %${pct}</span></button>`;
     }).join("");
     $$("#stuList .stu").forEach((b) => b.addEventListener("click", () => { selId = b.dataset.s; drawList(); drawDetail(); }));
@@ -292,7 +309,7 @@ async function CoachPanel(me) {
         <div class="muted small">${esc(st.sinif || "")} · ${esc(ALANLAR[st.alan] || "")}${st.hedef ? " · Hedef: " + esc(st.hedef) : ""}</div></div>
         <div class="row">${st.telefon ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(st.telefon)}">Öğrenci WhatsApp</a>` : ""}
         ${st.veliTelefon ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(st.veliTelefon)}">Veli WhatsApp</a>` : ""}</div></div></div>
-      <div class="tabs" id="cTabs">${[["program", "Program"], ["deneme", "Denemeler"], ["gorusme", "Görüşmeler"]].map(([k, v]) => `<button data-t="${k}" class="${tab === k ? "on" : ""}">${v}</button>`).join("")}</div>
+      <div class="tabs" id="cTabs">${[["program", "Program"], ["konu", "Konular"], ["soru", "Sorular"], ["deneme", "Denemeler"], ["mesaj", "Mesajlar"], ["gorusme", "Görüşmeler"]].map(([k, v]) => `<button data-t="${k}" class="${tab === k ? "on" : ""}">${v}${k === "mesaj" && unread[st.id] ? ` <span class="badge err">${unread[st.id]}</span>` : ""}</button>`).join("")}</div>
       <div id="cBody"></div>`;
     $$("#cTabs button").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.t; drawDetail(); }));
     drawTab(st);
@@ -300,6 +317,7 @@ async function CoachPanel(me) {
 
   async function drawTab(st) {
     const body = $("#cBody");
+    if (unsub) { unsub(); unsub = null; }
     try {
       if (tab === "program") {
         const list = weekTasks(allTasks.filter((t) => t.ogrenciId === st.id), weekStart);
@@ -321,9 +339,17 @@ async function CoachPanel(me) {
         }));
         $("#copyW").onclick = () => copyLastWeek(st);
         $("#veliR").onclick = () => veliRaporu(st);
+      } else if (tab === "konu") {
+        await renderKonular(body, st, { editable: false });
+      } else if (tab === "soru") {
+        await renderSorular(body, st, { editable: false, kocId: me.id });
+      } else if (tab === "mesaj") {
+        unsub = renderChat(body, { me, ogrenciId: st.id, kocId: me.id, karsiAd: st.ad, asCoach: true });
       } else if (tab === "deneme") {
         const list = docs(await getDocs(query(collection(db, "denemeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
-        renderDenemeler(body, list, { canDelete: false, onAdd: () => denemeModal(st, me.id, () => drawTab(st)), onDelete: () => {} });
+        body.innerHTML = `<div id="hedefEl" style="margin-bottom:1rem"></div><div id="denEl"></div>`;
+        await renderHedef($("#hedefEl"), st, list, { editable: false });
+        renderDenemeler($("#denEl"), list, { canDelete: false, onAdd: () => denemeModal(st, me.id, () => drawTab(st)), onDelete: () => {} });
       } else if (tab === "gorusme") {
         const list = docs(await getDocs(query(collection(db, "gorusmeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
         renderGorusmeler(body, list, { canAdd: true, onAdd: () => gorusmeModal(st) });
@@ -482,6 +508,16 @@ async function CoachPanel(me) {
     drawList(); drawTab(students.find((s) => s.id === selId));
   }
 
-  try { await loadBase(); shell(); }
+  try {
+    await loadBase(); shell();
+    watchUnread({ me, asCoach: true }, (byStu) => {
+      unread = byStu;
+      const tot = Object.values(byStu).reduce((a, b) => a + b, 0);
+      if ($("#unTot")) $("#unTot").textContent = tot;
+      if ($("#stuList")) drawList();
+      const mb = $('#cTabs [data-t="mesaj"]');
+      if (mb && tab !== "mesaj") mb.innerHTML = `Mesajlar${unread[selId] ? ` <span class="badge err">${unread[selId]}</span>` : ""}`;
+    });
+  }
   catch (err) { console.error(err); root.innerHTML = `<div class="card empty">Veriler yüklenemedi (${esc(err.code || "")}).</div>`; }
 }

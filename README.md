@@ -41,6 +41,11 @@ Marka, iletişim, fiyat, YKS tarihi ve koç kartları: **`assets/config.js`**
 - `gorevler` → ogrenciId, kocId, tarih (YYYY-MM-DD), ders, konu, tur, hedef, aciklama, tamam, ogrenciNotu
 - `denemeler` → ogrenciId, kocId, tarih, tur (TYT/AYT), alan, yayin, netler{ders:{d,y,net}}, toplam
 - `gorusmeler` → ogrenciId, kocId, tarih, sure, notlar, hedefler
+- `takip/{ogrenciId}` → konular (konu durumları), hedef {bolum, tyt, ayt}
+- `soruKayit/{ogrenciId}_{tarih}` → günlük soru sayıları
+- `mesajlar` → koç–öğrenci mesajları (ogrenciId, kocId, from, text, okundu)
+- `odemeler` → dönem/ödeme kayıtları (admin yönetir)
+- `veliRaporlari` → koçun hazırladığı haftalık veli raporları
 - `ogrenciBasvurulari`, `mentorBasvurulari` → ana sayfa formları (herkes yazar, sadece admin okur)
 
 ## Notlar

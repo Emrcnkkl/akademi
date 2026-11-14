@@ -94,6 +94,53 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- öğrenci takip: konu durumu + hedef  (belge ID = öğrenci uid) ----------
+    match /takip/{uid} {
+      allow read: if isAdmin()
+        || (isActive() && request.auth.uid == uid)
+        || (isKoc() && isActive() && kocunOgrencisi(uid));
+      allow write: if isAdmin()
+        || (isActive() && request.auth.uid == uid
+            && request.resource.data.keys().hasOnly(['konular', 'hedef', 'updatedAt'])
+            && (!('konular' in request.resource.data) || request.resource.data.konular is map)
+            && (!('hedef' in request.resource.data) || request.resource.data.hedef is map));
+    }
+
+    // ---------- günlük soru sayacı (belge ID = {ogrenciId}_{tarih}) ----------
+    match /soruKayit/{id} {
+      allow read: if isAdmin()
+        || (isActive() && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid));
+      allow create, update: if isActive() && request.resource.data.ogrenciId == request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.tarih
+        && request.resource.data.kocId == myUser().get('kocId', null)
+        && request.resource.data.dersler is map && request.resource.data.toplam is number
+        && request.resource.data.toplam >= 0 && request.resource.data.toplam <= 2000;
+      allow delete: if isAdmin() || (isActive() && resource.data.ogrenciId == request.auth.uid);
+    }
+
+    // ---------- koç–öğrenci mesajlaşma ----------
+    match /mesajlar/{id} {
+      allow read: if isAdmin()
+        || (isActive() && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid));
+      allow create: if isActive() && request.resource.data.from == request.auth.uid
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+        && request.resource.data.okundu == false
+        && ((request.resource.data.ogrenciId == request.auth.uid && request.resource.data.kocId == myUser().get('kocId', null))
+            || (isKoc() && request.resource.data.kocId == request.auth.uid && kocunOgrencisi(request.resource.data.ogrenciId)));
+      // alıcı sadece "okundu" alanını değiştirebilir
+      allow update: if isAdmin()
+        || (isActive() && resource.data.from != request.auth.uid
+            && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['okundu']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- ödemeler / dönemler (admin yönetir, öğrenci kendininkini görür) ----------
+    match /odemeler/{id} {
+      allow read: if isAdmin() || (isActive() && resource.data.ogrenciId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
     // ---------- ana sayfa başvuruları (herkes oluşturabilir, sadece admin görür) ----------
     function str(v, max) { return v is string && v.size() <= max; }
 
