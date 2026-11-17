@@ -62,10 +62,13 @@ export function denemeAnalizModal(deneme, { editable, onSaved }) {
 }
 
 // konu anahtarından okunur ad
-const KONU_ADI = {};
-for (const sin of ["TYT", "AYT"]) for (const [d, ks] of Object.entries(KONULAR[sin])) for (const k of ks) KONU_ADI[konuKey(sin, d, k)] = `${k} <span class="muted">· ${sin} ${d}</span>`;
+const KONU_ADI = {}, KONU_INFO = {};
+for (const sin of ["TYT", "AYT"]) for (const [d, ks] of Object.entries(KONULAR[sin])) for (const k of ks) {
+  KONU_ADI[konuKey(sin, d, k)] = `${k} <span class="muted">· ${sin} ${d}</span>`;
+  KONU_INFO[konuKey(sin, d, k)] = { konu: k, ders: d === "Felsefe Grubu" ? "Felsefe" : d, sinav: sin };
+}
 
-export function renderAnalizOzet(el, denemeler) {
+export function renderAnalizOzet(el, denemeler, { onKonuEkle } = {}) {
   const analizli = [...denemeler].filter((d) => d.analiz && Object.keys(d.analiz).length).sort((a, b) => b.tarih.localeCompare(a.tarih)).slice(0, 8);
   // ders bazında gidişat: son 3 deneme ortalaması vs önceki 3
   const trend = (tur) => {
@@ -100,9 +103,10 @@ export function renderAnalizOzet(el, denemeler) {
           <div class="stack-bar">${Object.entries(tur).map(([k, v]) => v ? `<i style="width:${(100 * v) / top}%;background:${NEDEN[k][1]}" title="${NEDEN[k][0]}: ${v}"></i>` : "").join("")}</div>
           ${Object.entries(tur).map(([k, v]) => `<div class="mini-row"><span><span class="dot" style="background:${NEDEN[k][1]}"></span>${NEDEN[k][0]}</span><b>${v} soru · %${Math.round((100 * v) / top)}</b></div>`).join("")}
           <p class="small" style="margin:.8rem 0 0;color:var(--ink-2)">💡 ${oneri}</p></div>
-        <div><h4 style="margin:0 0 .6rem">En çok kaybettiren konular</h4>${enCok.length ? enCok.map(([k, n]) => `<div class="mini-row"><span>${KONU_ADI[k] || esc(k)}</span><span class="badge err">${n} deneme</span></div>`).join("") : `<div class="empty">Konu işaretlenmemiş.</div>`}</div>
+        <div><h4 style="margin:0 0 .6rem">En çok kaybettiren konular</h4>${enCok.length ? enCok.map(([k, n]) => `<div class="mini-row"><span>${KONU_ADI[k] || esc(k)}</span><span class="row" style="gap:.35rem;flex-wrap:nowrap"><span class="badge err">${n} deneme</span>${onKonuEkle && KONU_INFO[k] ? `<button class="btn btn-accent btn-sm" data-kekle="${esc(k)}" style="padding:.2rem .6rem">+ Görev</button>` : ""}</span></div>`).join("") : `<div class="empty">Konu işaretlenmemiş.</div>`}</div>
       </div></div>
     <div class="grid-2" style="gap:1rem;align-items:start;margin-top:1rem">${trend("TYT")}${trend("AYT")}</div>`;
+  if (onKonuEkle) $$("[data-kekle]", el).forEach((b) => (b.onclick = () => onKonuEkle(KONU_INFO[b.dataset.kekle])));
 }
 
 // =====================================================================
@@ -283,7 +287,9 @@ export async function renderOzet(el, me, { coach, gorevler, onToggleTask, goTab 
       <div class="stat"><div class="n">${hafta}</div><div class="l">Son 7 gün soru · ${Math.round(haftaSure / 60)} sa çalışma</div></div>
       <div class="stat"><div class="n">${sonT ? fmt(sonT.toplam) : "–"}${hedef.tyt ? `<small class="muted" style="font-size:.9rem"> / ${fmt(hedef.tyt)}</small>` : ""}</div><div class="l">Son TYT${hedef.tyt ? " / hedef" : ""}</div></div>
     </div>
+    <div id="ozetSeri" style="margin-bottom:1rem"></div>
     <div class="ozet-grid">
+      <div id="ozetProgram"></div>
       <div class="card"><div class="spread"><h3 style="margin:0">📋 Bugünün görevleri</h3><button class="btn btn-ghost btn-sm" data-go="hafta">Haftaya bak →</button></div>
         ${bugunGorev.length ? bugunGorev.map((t) => `<label class="ozet-task ${t.tamam ? "done" : ""}"><input type="checkbox" data-ot="${t.id}" ${t.tamam ? "checked" : ""}/><span><b>${esc(t.ders)}${t.konu ? " – " + esc(t.konu) : ""}</b>${t.hedef ? `<small class="muted"> · ${esc(t.hedef)}</small>` : ""}</span></label>`).join("")
           : `<div class="empty">Bugün için görev yok.${coach ? " Koçun programı yazınca burada görünecek." : ""}</div>`}</div>
@@ -321,4 +327,5 @@ export async function renderOzet(el, me, { coach, gorevler, onToggleTask, goTab 
     try { await tekrarEttim(me.id, takip, b.dataset.tk); toast("Harika! Sonraki tekrar planlandı."); b.closest(".mini-row").remove(); }
     catch (e) { console.error(e); toast("Kaydedilemedi.", "err"); b.disabled = false; }
   }));
+  return { takip, hata: docs(hataSnap), den, soru };
 }

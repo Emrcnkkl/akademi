@@ -4,7 +4,9 @@
 import { setActive, observeReveal } from "./layout.js";
 import { BRAND, SINAV, HIKAYELER } from "./config.js";
 import { $, $$, toast, esc, DERSLER } from "./ui.js";
-import { renderCoaches, bindCoachFilter, bindMentorForm, bindStudentForm, bindFaq } from "./site.js";
+import { renderCoaches, bindCoachFilter, bindMentorForm, bindStudentForm, bindFaq, setKoclar } from "./site.js";
+import { firebaseConfig } from "./config.js";
+import { fillBrand } from "./ui.js";
 
 // ================= ANA SAYFA =================
 function initHome(root) {
@@ -31,10 +33,15 @@ function initHome(root) {
   bindFaq(root);
   // Instagram butonu
   root.querySelectorAll("[data-insta-btn]").forEach((a) => (a.href = BRAND.instagram));
-  // Başarı hikâyeleri (config.js → HIKAYELER)
-  if (HIKAYELER.length) {
+  renderHikayeler(HIKAYELER);
+}
+
+// Başarı hikâyeleri (config.js → HIKAYELER veya admin → Site içeriği)
+function renderHikayeler(list) {
+  const root = $('.view[data-view="home"]'), q = (s) => root.querySelector(s);
+  if (list.length) {
     q("#hikayeler").classList.remove("hidden");
-    q("#storyGrid").innerHTML = HIKAYELER.map((h) => `<div class="story metal-card reveal">
+    q("#storyGrid").innerHTML = list.map((h) => `<div class="story metal-card reveal in">
       <div class="story-top"><span class="avatar">${esc(h.ad.split(" ").map((p) => p[0]).join("").slice(0, 2))}</span><div><b>${esc(h.ad)}</b><div class="muted small">${esc(h.hedef || "")}${h.yil ? " · " + esc(h.yil) : ""}</div></div></div>
       ${h.sonuc ? `<div class="story-res">${esc(h.sonuc)}</div>` : ""}
       ${h.metin ? `<p>“${esc(h.metin)}”</p>` : ""}${h.koc ? `<span class="muted small">Koçu: ${esc(h.koc)}</span>` : ""}</div>`).join("");
@@ -268,3 +275,41 @@ addEventListener("hashchange", () => {
   try { const net = sessionStorage.getItem("sonTytNet"); const h = $("#s_hedef");
     if (net && net !== "0" && h && !h.value) h.value = `Son TYT netim: ${net}. `; } catch {}
 });
+
+
+// ================= SİTE İÇERİĞİ (admin → Site içeriği) =================
+// Firestore REST ile okunur (SDK yüklenmez, sayfa hızını etkilemez). Yoksa config.js değerleri kalır.
+const fsVal = (v) => v == null ? null : "stringValue" in v ? v.stringValue : "integerValue" in v ? Number(v.integerValue)
+  : "doubleValue" in v ? v.doubleValue : "booleanValue" in v ? v.booleanValue : "nullValue" in v ? null
+  : "arrayValue" in v ? (v.arrayValue.values || []).map(fsVal)
+  : "mapValue" in v ? Object.fromEntries(Object.entries(v.mapValue.fields || {}).map(([k, x]) => [k, fsVal(x)])) : null;
+
+function sssEkle(list) {
+  const det = list.map((x) => `<details><summary>${esc(x.soru)}</summary><p>${esc(x.cevap)}</p></details>`).join("");
+  const home = $("#faq"); if (home) { home.insertAdjacentHTML("afterbegin", det); bindFaq(home.parentElement); }
+  const sv = $('.view[data-view="sss"] .sss-layout > div');
+  if (sv && !$("#sss-diger")) { sv.insertAdjacentHTML("afterbegin", `<div id="sss-diger" style="scroll-margin-top:120px;margin-bottom:2.2rem"><h2 style="font-size:1.5rem;margin-bottom:1rem">Güncel sorular</h2><div class="faq" style="max-width:none">${det}</div></div>`); bindFaq($("#sss-diger")); }
+}
+
+async function loadIcerik() {
+  try {
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/site/icerik?key=${firebaseConfig.apiKey}`);
+    if (!r.ok) return;
+    const j = await r.json();
+    const ic = fsVal({ mapValue: { fields: j.fields || {} } }) || {};
+    if (ic.fiyat) BRAND.baslangicFiyat = ic.fiyat;
+    if (ic.iletisim?.whatsapp) BRAND.whatsapp = ic.iletisim.whatsapp;
+    if (ic.iletisim?.email) BRAND.email = ic.iletisim.email;
+    if (ic.iletisim?.instagram) BRAND.instagram = ic.iletisim.instagram;
+    fillBrand();
+    $$("[data-insta-btn]").forEach((a) => (a.href = BRAND.instagram));
+    if (ic.koclar?.length) {
+      setKoclar(ic.koclar);
+      const hg = $("#coachGrid"); if (hg) { renderCoaches(hg, { limit: 4 }); $$("#coachFilter button").forEach((b, i) => b.classList.toggle("on", i === 0)); }
+      if (started.has("koclar")) { renderCoaches($("#kocGrid")); $$("#kocFilter button").forEach((b, i) => b.classList.toggle("on", i === 0)); }
+    }
+    if (ic.hikayeler?.length) renderHikayeler(ic.hikayeler);
+    if (ic.sss?.length) sssEkle(ic.sss);
+  } catch (e) { console.warn("Site içeriği okunamadı", e); }
+}
+loadIcerik();

@@ -3,10 +3,10 @@ import {
   onAuthStateChanged, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  collection, query, orderBy, where, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, deleteField,
+  collection, query, orderBy, where, getDocs, getDoc, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, deleteField,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { $, $$, esc, fillBrand, toast, openModal, tsStr, trDate, ALANLAR, randomPassword, iso, monday, addDays } from "./ui.js";
-import { BRAND } from "./config.js";
+import { BRAND, KOCLAR, HIKAYELER } from "./config.js";
 
 fillBrand();
 const ROL_ADI = { ogrenci: "Öğrenci", koc: "Koç", admin: "Yönetici" };
@@ -72,6 +72,9 @@ function draw() {
   else if (tab === "mentorBas") drawBasvuru(body, "mentorBasvurulari", menBas, "koc");
   else if (tab === "rapor") drawRaporlar(body);
   else if (tab === "odeme") drawOdemeler(body);
+  else if (tab === "hakedis") drawHakedis(body);
+  else if (tab === "duyuru") drawDuyurular(body);
+  else if (tab === "site") drawSite(body);
   else drawUsers(body);
 }
 
@@ -422,4 +425,122 @@ function userModal(existing, data, presetRole = null, fromBasvuru = null) {
       toast(msg, "err"); e.target.disabled = false;
     }
   };
+}
+
+
+// ============ KOÇ HAKEDİŞİ ============
+async function drawHakedis(body) {
+  body.innerHTML = `<div class="empty">Yükleniyor…</div>`;
+  let ayar = { kocOrani: 40 };
+  try { const a = await getDoc(doc(db, "ayarlar", "genel")); if (a.exists()) ayar = { ...ayar, ...a.data() }; } catch (e) { console.warn(e); }
+  let kayit = [];
+  try { kayit = docs(await getDocs(collection(db, "hakedisler"))); } catch (e) { console.warn(e); }
+  let ay = body.dataset.ay || iso(new Date()).slice(0, 7);
+  const render = () => {
+    const odenen = odemeler.filter((o) => o.durum === "odendi" && (o.odemeTarihi || o.baslangic || "").startsWith(ay));
+    const rows = koclar().map((k) => {
+      const ods = odenen.filter((o) => o.kocId === k.id), tahsilat = ods.reduce((a, o) => a + (Number(o.tutar) || 0), 0);
+      const kay = kayit.find((h) => h.id === `${k.id}_${ay}`);
+      const oran = kay?.oran ?? k.hakedisOrani ?? ayar.kocOrani;
+      return { k, ods, tahsilat, oran, tutar: kay?.tutar ?? Math.round((tahsilat * oran) / 100), kay };
+    });
+    const top = rows.reduce((a, r) => a + r.tutar, 0), tah = rows.reduce((a, r) => a + r.tahsilat, 0);
+    body.innerHTML = `<div class="spread" style="margin-bottom:1rem"><div class="row"><label class="small"><b>Ay</b></label><input type="month" id="hkAy" value="${ay}" style="width:auto"/>
+        <label class="small" style="margin-left:1rem"><b>Varsayılan koç payı</b></label><input type="number" id="hkOran" min="0" max="100" value="${ayar.kocOrani}" style="width:80px"/><span>%</span><button class="btn btn-ghost btn-sm" id="hkOranS">Kaydet</button></div>
+        <span class="muted small">Hesap: o ay tahsil edilen ödemeler × koç payı</span></div>
+      <div class="stats" style="grid-template-columns:repeat(3,1fr)"><div class="stat"><div class="n">${TL(tah)}</div><div class="l">${ay} tahsilat</div></div>
+        <div class="stat"><div class="n">${TL(top)}</div><div class="l">Toplam koç hakedişi</div></div><div class="stat"><div class="n">${TL(tah - top)}</div><div class="l">Şirkete kalan</div></div></div>
+      <div class="card table-wrap"><table><thead><tr><th>Koç</th><th>Ödenen dönem</th><th>Tahsilat</th><th>Pay %</th><th>Hakediş</th><th>Durum</th><th></th></tr></thead><tbody>
+        ${rows.map((r) => `<tr><td><b>${esc(r.k.ad)}</b></td><td>${r.ods.length}</td><td>${TL(r.tahsilat)}</td>
+          <td><input type="number" min="0" max="100" value="${r.oran}" data-or="${r.k.id}" style="width:70px;padding:.35rem"/></td>
+          <td><input type="number" min="0" step="10" value="${r.tutar}" data-tu="${r.k.id}" style="width:110px;padding:.35rem"/></td>
+          <td>${r.kay ? (r.kay.odendi ? `<span class="badge ok">Ödendi</span>` : `<span class="badge warn">Kaydedildi</span>`) : `<span class="badge gray">Taslak</span>`}</td>
+          <td><div class="row" style="gap:.3rem"><button class="btn btn-ghost btn-sm" data-hks="${r.k.id}">Kaydet</button>${r.kay && !r.kay.odendi ? `<button class="btn btn-primary btn-sm" data-hko="${r.k.id}">Ödendi ✓</button>` : ""}</div></td></tr>`).join("") || `<tr><td colspan="7"><div class="empty">Koç yok.</div></td></tr>`}
+      </tbody></table></div>
+      <p class="muted small">Pay % değiştirince hakediş tutarı kendiliğinden hesaplanır; istersen tutarı elle de düzeltebilirsin. Kaydedilen hakedişleri koçlar kendi panellerinde "Kazancım" sekmesinde görür.</p>`;
+    $("#hkAy", body).onchange = (e) => { ay = e.target.value; body.dataset.ay = ay; render(); };
+    $("#hkOranS", body).onclick = async () => { ayar.kocOrani = Number($("#hkOran", body).value) || 0; try { await setDoc(doc(db, "ayarlar", "genel"), ayar, { merge: true }); toast("Kaydedildi."); render(); } catch { toast("Kaydedilemedi.", "err"); } };
+    $$("[data-or]", body).forEach((i) => (i.oninput = () => { const r = rows.find((x) => x.k.id === i.dataset.or); $(`[data-tu="${r.k.id}"]`, body).value = Math.round((r.tahsilat * (Number(i.value) || 0)) / 100); }));
+    const kaydet = async (kid, extra = {}) => {
+      const r = rows.find((x) => x.k.id === kid);
+      const data = { kocId: kid, ay, tahsilat: r.tahsilat, donemSayisi: r.ods.length, oran: Number($(`[data-or="${kid}"]`, body).value) || 0, tutar: Number($(`[data-tu="${kid}"]`, body).value) || 0, odendi: r.kay?.odendi || false, updatedAt: serverTimestamp(), ...extra };
+      try { await setDoc(doc(db, "hakedisler", `${kid}_${ay}`), data); const i = kayit.findIndex((h) => h.id === `${kid}_${ay}`); const nd = { id: `${kid}_${ay}`, ...data }; i >= 0 ? (kayit[i] = nd) : kayit.push(nd); toast("Kaydedildi."); render(); }
+      catch (e) { console.error(e); toast("Kaydedilemedi.", "err"); }
+    };
+    $$("[data-hks]", body).forEach((b) => (b.onclick = () => kaydet(b.dataset.hks)));
+    $$("[data-hko]", body).forEach((b) => (b.onclick = () => kaydet(b.dataset.hko, { odendi: true, odemeTarihi: iso(new Date()) })));
+  };
+  render();
+}
+
+// ============ DUYURULAR ============
+async function drawDuyurular(body) {
+  let list = [];
+  try { list = docs(await getDocs(collection(db, "duyurular"))).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); } catch (e) { console.warn(e); }
+  const HEDEF = { herkes: "Herkes", ogrenci: "Öğrenciler", koc: "Koçlar" };
+  body.innerHTML = `<div class="grid-2" style="gap:1rem;align-items:start">
+    <div class="card"><h3 style="margin-top:0">Yeni duyuru</h3>
+      <div class="field"><label>Başlık</label><input id="dy_b" maxlength="100" placeholder="Örn. Deneme kampı kayıtları açıldı"/></div>
+      <div class="field"><label>Metin</label><textarea id="dy_m" maxlength="1000"></textarea></div>
+      <div class="field"><label>Kime</label><select id="dy_h">${Object.entries(HEDEF).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
+      <button class="btn btn-accent" id="dy_s">Yayınla</button>
+      <p class="muted small">Duyurular öğrenci ve koç panellerinde 🔔 bildirimlerde görünür.</p></div>
+    <div class="card"><h3 style="margin-top:0">Yayındaki duyurular</h3>${list.length ? list.map((d) => `<div class="note-item"><div class="spread"><b>${esc(d.baslik)}</b><span class="row" style="gap:.3rem"><span class="badge">${HEDEF[d.hedef] || d.hedef}</span>${d.aktif === false ? `<span class="badge gray">Kapalı</span>` : ""}</span></div>
+        <p class="small" style="margin:.3rem 0;white-space:pre-wrap">${esc(d.metin)}</p><div class="spread small muted"><span>${tsStr(d.createdAt)}</span><span class="row" style="gap:.3rem"><button class="btn btn-ghost btn-sm" data-dyt="${d.id}">${d.aktif === false ? "Aç" : "Kapat"}</button><button class="btn btn-danger btn-sm" data-dys="${d.id}">Sil</button></span></div></div>`).join("")
+      : `<div class="empty">Henüz duyuru yok.</div>`}</div></div>`;
+  $("#dy_s", body).onclick = async () => {
+    const baslik = $("#dy_b", body).value.trim(), metin = $("#dy_m", body).value.trim();
+    if (!baslik) return toast("Başlık yaz.", "err");
+    try { await addDoc(collection(db, "duyurular"), { baslik, metin, hedef: $("#dy_h", body).value, aktif: true, createdAt: serverTimestamp() }); toast("Duyuru yayınlandı."); drawDuyurular(body); } catch (e) { console.error(e); toast("Yayınlanamadı.", "err"); }
+  };
+  $$("[data-dyt]", body).forEach((b) => (b.onclick = async () => { const d = list.find((x) => x.id === b.dataset.dyt); await updateDoc(doc(db, "duyurular", d.id), { aktif: d.aktif === false }).catch(() => toast("Güncellenemedi.", "err")); drawDuyurular(body); }));
+  $$("[data-dys]", body).forEach((b) => (b.onclick = async () => { if (!confirm("Duyuru silinsin mi?")) return; await deleteDoc(doc(db, "duyurular", b.dataset.dys)).catch(() => toast("Silinemedi.", "err")); drawDuyurular(body); }));
+}
+
+// ============ SİTE İÇERİĞİ (ana sayfayı koda dokunmadan güncelle) ============
+const ICERIK_ALAN = {
+  koclar: [["ad", "Ad soyad"], ["okul", "Üniversite – bölüm"], ["alan", "Alan", ["SAY", "EA", "SOZ", "DIL"]], ["derece", "Derece (örn. EA-398)"], ["foto", "Fotoğraf URL"], ["ornek", "Örnek profil", "check"]],
+  hikayeler: [["ad", "Öğrenci (örn. Ayşe Y.)"], ["sonuc", "Sonuç (örn. TYT 68 → 97)"], ["hedef", "Kazandığı yer"], ["yil", "Yıl"], ["metin", "Yorumu"], ["koc", "Koçu"]],
+  sss: [["soru", "Soru"], ["cevap", "Cevap"]],
+};
+async function drawSite(body) {
+  body.innerHTML = `<div class="empty">Yükleniyor…</div>`;
+  let ic = null;
+  try { const s = await getDoc(doc(db, "site", "icerik")); if (s.exists()) ic = s.data(); } catch (e) { console.warn(e); }
+  const varsayilan = !ic;
+  ic = ic || { fiyat: BRAND.baslangicFiyat, iletisim: { whatsapp: BRAND.whatsapp, email: BRAND.email, instagram: BRAND.instagram }, koclar: KOCLAR.map((k) => ({ ...k })), hikayeler: [...HIKAYELER], sss: [] };
+  ic.iletisim ||= {}; ic.koclar ||= []; ic.hikayeler ||= []; ic.sss ||= [];
+  const listEd = (key, baslik, ac) => `<div class="card" style="margin-bottom:1rem"><div class="spread"><div><h3 style="margin:0">${baslik}</h3><span class="muted small">${ac}</span></div><button class="btn btn-ghost btn-sm" data-ekle="${key}">+ Ekle</button></div>
+      <div class="ed-list" data-list="${key}">${ic[key].map((it, i) => `<div class="ed-row">${ICERIK_ALAN[key].map(([f, l, t]) =>
+        t === "check" ? `<label class="check" style="margin:0"><input type="checkbox" data-f="${f}" ${it[f] ? "checked" : ""}/> ${l}</label>`
+        : Array.isArray(t) ? `<div class="field" style="margin:0"><label>${l}</label><select data-f="${f}">${t.map((o) => `<option ${it[f] === o ? "selected" : ""}>${o}</option>`).join("")}</select></div>`
+        : `<div class="field" style="margin:0"><label>${l}</label>${f === "metin" || f === "cevap" ? `<textarea data-f="${f}" rows="2">${esc(it[f] ?? "")}</textarea>` : `<input data-f="${f}" value="${esc(it[f] ?? "")}"/>`}</div>`).join("")}
+        <div class="ed-act"><button class="btn btn-ghost btn-sm" data-up="${key}:${i}" title="Yukarı">↑</button><button class="btn btn-danger btn-sm" data-sil="${key}:${i}">Sil</button></div></div>`).join("") || `<div class="empty">Boş.</div>`}</div></div>`;
+  const draw = () => {
+    body.innerHTML = `${varsayilan ? `<div class="koc-not" style="margin-bottom:1rem">Site içeriği henüz kaydedilmedi; şu an kodda yazan değerler gösteriliyor. Düzenleyip <b>Kaydet ve yayınla</b>'ya bastığında ana sayfa bu içeriği kullanmaya başlar.</div>` : ""}
+      <div class="spread" style="margin-bottom:1rem"><span class="muted small">Değişiklikler kaydedildiği an ana sayfada görünür (kod gerekmez).</span><button class="btn btn-accent" id="siteSave">💾 Kaydet ve yayınla</button></div>
+      <div class="card" style="margin-bottom:1rem"><h3 style="margin-top:0">İletişim ve fiyat</h3><div class="grid-2">
+        <div class="field"><label>Başlangıç fiyatı (ana sayfada görünür)</label><input id="ic_f" value="${esc(ic.fiyat || "")}" placeholder="2.900 TL"/></div>
+        <div class="field"><label>WhatsApp (905xxxxxxxxx)</label><input id="ic_w" value="${esc(ic.iletisim.whatsapp || "")}"/></div>
+        <div class="field"><label>E-posta</label><input id="ic_e" value="${esc(ic.iletisim.email || "")}"/></div>
+        <div class="field"><label>Instagram bağlantısı</label><input id="ic_i" value="${esc(ic.iletisim.instagram || "")}"/></div></div></div>
+      ${listEd("koclar", "Koç kartları", "Ana sayfa ve Koçlarımız sayfasındaki kartlar. Fotoğraf için herkese açık bir görsel bağlantısı yapıştır.")}
+      ${listEd("hikayeler", "Başarı hikâyeleri", "Sadece gerçek öğrencilerin izniyle ekleyin. Liste boşsa bölüm görünmez.")}
+      ${listEd("sss", "Ek SSS soruları", "Ana sayfadaki ve SSS sayfasındaki sorulara eklenir.")}`;
+    const topla = () => {
+      ic.fiyat = $("#ic_f", body).value.trim();
+      ic.iletisim = { whatsapp: $("#ic_w", body).value.replace(/\D/g, ""), email: $("#ic_e", body).value.trim(), instagram: $("#ic_i", body).value.trim() };
+      for (const key of Object.keys(ICERIK_ALAN)) ic[key] = $$(`[data-list="${key}"] .ed-row`, body).map((r) => Object.fromEntries($$("[data-f]", r).map((i) => [i.dataset.f, i.type === "checkbox" ? i.checked : i.value.trim()])));
+    };
+    $$("[data-ekle]", body).forEach((b) => (b.onclick = () => { topla(); ic[b.dataset.ekle].push({}); draw(); }));
+    $$("[data-sil]", body).forEach((b) => (b.onclick = () => { topla(); const [k, i] = b.dataset.sil.split(":"); ic[k].splice(+i, 1); draw(); }));
+    $$("[data-up]", body).forEach((b) => (b.onclick = () => { topla(); const [k, i] = b.dataset.up.split(":"); if (+i > 0) [ic[k][i - 1], ic[k][i]] = [ic[k][i], ic[k][i - 1]]; draw(); }));
+    $("#siteSave", body).onclick = async (e) => {
+      topla(); e.target.disabled = true;
+      ic.koclar = ic.koclar.filter((k) => k.ad); ic.hikayeler = ic.hikayeler.filter((h) => h.ad); ic.sss = ic.sss.filter((x) => x.soru && x.cevap);
+      try { await setDoc(doc(db, "site", "icerik"), { ...ic, updatedAt: serverTimestamp() }); toast("Yayınlandı. Ana sayfa güncellendi."); drawSite(body); }
+      catch (err) { console.error(err); toast("Kaydedilemedi: " + (err.code || ""), "err"); e.target.disabled = false; }
+    };
+  };
+  draw();
 }

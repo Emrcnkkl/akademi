@@ -151,7 +151,76 @@ service cloud.firestore {
 
     // ---------- ödemeler / dönemler (admin yönetir, öğrenci kendininkini görür) ----------
     match /odemeler/{id} {
-      allow read: if isAdmin() || (isActive() && resource.data.ogrenciId == request.auth.uid);
+      allow read: if isAdmin() || (isActive() && resource.data.ogrenciId == request.auth.uid)
+        || (isKoc() && isActive() && resource.data.kocId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // ---------- koçun öğrenci ayarları (haftalık soru hedefi vb.)  belge ID = öğrenci uid ----------
+    match /kocAyar/{ogrId} {
+      allow read: if isAdmin() || (isActive() && request.auth.uid == ogrId) || (isKoc() && isActive() && kocunOgrencisi(ogrId));
+      allow write: if isAdmin() || (isKoc() && isActive() && kocunOgrencisi(ogrId));
+    }
+
+    // ---------- koç müsaitlik takvimi  belge ID = koç uid ----------
+    match /kocTakvim/{kocId} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == kocId)
+        || (isActive() && myUser().get('kocId', null) == kocId);
+      allow write: if isAdmin() || (isKoc() && isActive() && request.auth.uid == kocId);
+    }
+
+    // ---------- görüşme randevuları  belge ID = {kocId}_{tarih}_{saat} (aynı saate ikinci kayıt açılamaz) ----------
+    match /randevular/{id} {
+      allow read: if isAdmin()
+        || (isActive() && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid
+            || resource.data.kocId == myUser().get('kocId', null)));
+      allow create: if isActive() && id == request.resource.data.kocId + '_' + request.resource.data.tarih + '_' + request.resource.data.saat
+        && request.resource.data.durum == 'onayli'
+        && ((request.resource.data.ogrenciId == request.auth.uid && request.resource.data.kocId == myUser().get('kocId', null))
+            || (isKoc() && request.resource.data.kocId == request.auth.uid && kocunOgrencisi(request.resource.data.ogrenciId)));
+      allow delete: if isAdmin() || (isActive() && (resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid));
+    }
+
+    // ---------- haftalık ders programı (koç girer)  belge ID = {ogrenciId}_{haftaBaşı} ----------
+    match /dersProgrami/{id} {
+      allow read: if isAdmin()
+        || (isActive() && (resource == null || resource.data.ogrenciId == request.auth.uid || resource.data.kocId == request.auth.uid));
+      allow create, update: if isAdmin()
+        || (isKoc() && isActive() && request.resource.data.kocId == request.auth.uid
+            && kocunOgrencisi(request.resource.data.ogrenciId)
+            && id == request.resource.data.ogrenciId + '_' + request.resource.data.hafta
+            && request.resource.data.bloklar is list && request.resource.data.bloklar.size() <= 120);
+      allow delete: if isAdmin() || (isKoc() && isActive() && resource.data.kocId == request.auth.uid);
+    }
+
+    // ---------- koçun program şablonları ----------
+    match /sablonlar/{id} {
+      allow read, delete: if isAdmin() || (isKoc() && isActive() && resource.data.kocId == request.auth.uid);
+      allow create: if isKoc() && isActive() && request.resource.data.kocId == request.auth.uid
+        && request.resource.data.gorevler is list && request.resource.data.gorevler.size() <= 150;
+      allow update: if isKoc() && isActive() && resource.data.kocId == request.auth.uid && unchanged('kocId');
+    }
+
+    // ---------- duyurular (admin yazar, giriş yapan herkes okur) ----------
+    match /duyurular/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---------- koç hakedişleri  belge ID = {kocId}_{YYYY-MM} ----------
+    match /hakedisler/{id} {
+      allow read: if isAdmin() || (isKoc() && resource.data.kocId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // ---------- yönetici ayarları (hakediş oranı vb.) ----------
+    match /ayarlar/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---------- herkese açık site içeriği (koç kartları, fiyat, SSS...) ----------
+    match /site/{id} {
+      allow read: if true;
       allow write: if isAdmin();
     }
 

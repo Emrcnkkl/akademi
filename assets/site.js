@@ -1,5 +1,9 @@
 // Sayfalar arasında paylaşılan bileşenler: koç kartları, ön kayıt formu, koç başvuru formu, SSS.
 import { KOCLAR } from "./config.js";
+
+// Koç listesi: varsayılan config.js, admin panelinden "Site içeriği" kaydedildiyse oradan gelir
+let KOC_LISTE = KOCLAR;
+export function setKoclar(list) { if (Array.isArray(list) && list.length) KOC_LISTE = list; }
 import { $, $$, toast, esc } from "./ui.js";
 
 // Firebase (~300 KB) sayfa açılışını yavaşlatmasın: sadece form kullanılınca yüklenir.
@@ -25,7 +29,7 @@ const ALAN_AD = { SAY: "Sayısal", EA: "Eşit Ağırlık", SOZ: "Sözel", DIL: "
 
 // ---------- koç kartları ----------
 export function renderCoaches(el, { alan = "", limit = 0 } = {}) {
-  let list = KOCLAR.filter((k) => !alan || k.alan === alan);
+  let list = KOC_LISTE.filter((k) => !alan || k.alan === alan);
   if (limit) list = list.slice(0, limit);
   el.innerHTML = list.length ? list.map((k) => {
     const ini = k.ad.split(" ").map((p) => p[0]).join("").slice(0, 2);

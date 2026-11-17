@@ -7,7 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 // Panel bileşenleri giriş ekranını bekletmesin: arka planda yüklenir, panel açılırken hazır olur.
 let P = {};
-const panelsReady = Promise.all([import("./panel-ext.js"), import("./panel-ext2.js")]).then(([a, b]) => (P = { ...a, ...b }));
+const panelsReady = Promise.all([import("./panel-ext.js"), import("./panel-ext2.js"), import("./panel-ext3.js")]).then(([a, b, c]) => (P = { ...a, ...b, ...c }));
 import {
   $, $$, esc, fillBrand, toast, iso, monday, addDays, GUNLER, GUN_KISA, trDate, openModal,
   ALANLAR, DERSLER, GOREV_TUR, DERS_LISTESI, lineChart, tsStr,
@@ -158,7 +158,7 @@ function denemeModal(student, kocId, onSaved) {
   });
 }
 
-function renderDenemeler(el, list, { canDelete, onAdd, onDelete, editable = canDelete, onRefresh }) {
+function renderDenemeler(el, list, { canDelete, onAdd, onDelete, editable = canDelete, onRefresh, onKonuEkle }) {
   const sorted = [...list].sort((a, b) => a.tarih.localeCompare(b.tarih));
   const chart = (tur) => {
     const pts = sorted.filter((d) => d.tur === tur).slice(-12).map((d) => ({ x: trDate(d.tarih).slice(0, 5), y: d.toplam }));
@@ -176,7 +176,7 @@ function renderDenemeler(el, list, { canDelete, onAdd, onDelete, editable = canD
       </tbody></table>` : `<div class="empty">Henüz deneme girilmedi.</div>`}</div>`;
   $("#addDeneme", el).addEventListener("click", onAdd);
   $$("[data-deldn]", el).forEach((b) => b.addEventListener("click", () => onDelete(b.dataset.deldn)));
-  P.renderAnalizOzet($("#analizOzet", el), list);
+  P.renderAnalizOzet($("#analizOzet", el), list, { onKonuEkle });
   $$("[data-an]", el).forEach((b) => b.addEventListener("click", () => {
     const d = list.find((x) => x.id === b.dataset.an);
     if (!editable && !(d.analiz && Object.keys(d.analiz).length)) return toast("Öğrenci bu deneme için analiz girmemiş.", "err");
@@ -191,6 +191,20 @@ function renderGorusmeler(el, list, { canAdd, onAdd }) {
       <p style="white-space:pre-wrap;margin:.4rem 0">${esc(g.notlar)}</p>
       ${g.hedefler ? `<div class="small"><b>Gelecek hafta hedefleri:</b> <span style="white-space:pre-wrap">${esc(g.hedefler)}</span></div>` : ""}</div>`).join("") || `<div class="empty">Henüz görüşme notu yok.</div>`}</div>`;
   if (canAdd) $("#addGr", el).addEventListener("click", onAdd);
+}
+
+// Konular: liste (işaretlenebilir) / çizelge (tek bakışta) görünümü
+async function konuGorunum(el, student, editable, defView = editable ? "liste" : "cizelge") {
+  let view = defView;
+  el.innerHTML = `<div class="seg" id="kvSeg" style="margin-bottom:1rem"><button data-v="liste">Liste</button><button data-v="cizelge">Çizelge</button></div><div id="kvBody"></div>`;
+  const draw = async () => {
+    $$("#kvSeg button", el).forEach((b) => b.classList.toggle("on", b.dataset.v === view));
+    const b = $("#kvBody", el);
+    if (view === "liste") await P.renderKonular(b, student, { editable });
+    else P.renderKonuCizelge(b, student, await P.getTakip(student.id));
+  };
+  $$("#kvSeg button", el).forEach((b) => (b.onclick = () => { view = b.dataset.v; draw(); }));
+  await draw();
 }
 
 // ============ ÖĞRENCİ PANELİ ============
@@ -209,6 +223,8 @@ async function StudentPanel(me) {
   let tab = "ozet", unsub = null;
   const goTab = (t) => { $$("#sTabs button").forEach((x) => x.classList.toggle("on", x.dataset.t === t)); tab = t; draw(); scrollTo({ top: 0, behavior: "smooth" }); };
   $$("#sTabs button").forEach((b) => b.addEventListener("click", () => goTab(b.dataset.t)));
+  P.mountPomodoro(me);
+  P.mountBildirim(me, "ogrenci", { goTab });
   P.watchUnread({ me, asCoach: false }, (byStu) => {
     const n = Object.values(byStu).reduce((a, b) => a + b, 0), el = $("#sUnread");
     el.textContent = n; el.classList.toggle("hidden", !n || tab === "mesaj");
@@ -220,8 +236,13 @@ async function StudentPanel(me) {
     try {
       if (tab === "ozet") {
         const all = docs(await getDocs(query(collection(db, "gorevler"), where("ogrenciId", "==", me.id))));
-        await P.renderOzet(body, me, { coach, gorevler: all, goTab,
-          onToggleTask: async (id, val) => { try { await updateDoc(doc(db, "gorevler", id), { tamam: val }); } catch { toast("Güncellenemedi.", "err"); } } });
+        const [data, ayar] = await Promise.all([
+          P.renderOzet(body, me, { coach, gorevler: all, goTab,
+            onToggleTask: async (id, val) => { try { await updateDoc(doc(db, "gorevler", id), { tamam: val }); } catch { toast("Güncellenemedi.", "err"); } } }),
+          P.getKocAyar(me.id),
+        ]);
+        if ($("#ozetSeri")) P.renderSeriRozet($("#ozetSeri"), { ...data, hedef: ayar.haftalikSoruHedefi || 0 });
+        if ($("#ozetProgram")) P.renderDersProgrami($("#ozetProgram"), me, { editable: false, compact: true });
       } else if (tab === "hata") {
         await P.renderHataDefteri(body, me, { editable: true });
       } else if (tab === "kaynak") {
@@ -233,7 +254,8 @@ async function StudentPanel(me) {
         body.innerHTML = `<div class="spread" style="margin-bottom:1rem">
             <div class="week-nav"><button class="btn btn-ghost btn-sm" id="prevW">←</button><b>${weekHeader(weekStart)}</b><button class="btn btn-ghost btn-sm" id="nextW">→</button></div>
             <div style="min-width:220px"><div class="spread small"><span>Tamamlanan</span><b>%${pct}</b></div><div class="progress"><i style="width:${pct}%"></i></div></div></div>
-          <div id="weekEl"></div>`;
+          <div id="dpEl"></div><div id="weekEl"></div>`;
+        P.renderDersProgrami($("#dpEl"), me, { editable: false });
         renderWeek($("#weekEl"), list, weekStart, "ogrenci");
         $("#prevW").onclick = () => { weekStart = addDays(weekStart, -7); draw(); };
         $("#nextW").onclick = () => { weekStart = addDays(weekStart, 7); draw(); };
@@ -252,7 +274,7 @@ async function StudentPanel(me) {
           };
         }));
       } else if (tab === "konu") {
-        await P.renderKonular(body, me, { editable: true });
+        await konuGorunum(body, me, true);
       } else if (tab === "soru") {
         await P.renderSorular(body, me, { editable: true });
       } else if (tab === "mesaj") {
@@ -276,8 +298,8 @@ async function StudentPanel(me) {
             <div class="coach-tag"><b>${esc(coach.ad)}</b><span class="coach-school">${esc(coach.universite || "")}${coach.bolum ? " – " + esc(coach.bolum) : ""}</span><span class="coach-rank">${esc(coach.alan || "")}${coach.siralama ? "-" + Number(coach.siralama).toLocaleString("tr-TR") : ""}</span></div></div></div>
           ${coach.telefon ? `<a class="btn btn-accent" style="margin-top:1rem" target="_blank" rel="noopener" href="${waLink(coach.telefon)}">WhatsApp'tan yaz</a>` : ""}`
           : `<div class="card empty">Henüz bir koça atanmadın. Ekibimiz en kısa sürede eşleştirme yapacak.</div>`;
-        body.innerHTML = `<div class="grid-2" style="gap:1.5rem;align-items:start"><div>${body.innerHTML}</div><div id="paketEl"></div></div>`;
-        await P.renderPaket($("#paketEl"), me);
+        body.innerHTML = `<div class="grid-2" style="gap:1.5rem;align-items:start"><div>${body.innerHTML}</div><div><div id="randEl" style="margin-bottom:1rem"></div><div id="paketEl"></div></div></div>`;
+        await Promise.all([P.renderRandevu($("#randEl"), me, coach), P.renderPaket($("#paketEl"), me)]);
       }
     } catch (err) { console.error(err); body.innerHTML = `<div class="card empty">Veriler yüklenemedi (${esc(err.code || "")}).</div>`; }
   }
@@ -289,13 +311,18 @@ async function CoachPanel(me) {
   await panelsReady;
   const root = $("#root");
   let weekStart = monday();
-  let students = [], allTasks = [], selId = null, tab = "program", unsub = null, unread = {};
+  let students = [], allTasks = [], selId = null, tab = "program", unsub = null, unread = {}, view = "ogr";
+  let riskData = { soru: [], den: [], gor: [], odeme: [] }, hakedis = [];
+  const safeQ = (q) => getDocs(q).then(docs).catch((e) => { console.warn(e); return []; });
 
   async function loadBase() {
     students = docs(await getDocs(query(collection(db, "users"), where("kocId", "==", me.id))))
       .filter((s) => s.aktif !== false).sort((a, b) => (a.ad || "").localeCompare(b.ad || "", "tr"));
     allTasks = docs(await getDocs(query(collection(db, "gorevler"), where("kocId", "==", me.id))));
+    const [soru, den, gor, odeme, hk] = await Promise.all(["soruKayit", "denemeler", "gorusmeler", "odemeler", "hakedisler"].map((c) => safeQ(query(collection(db, c), where("kocId", "==", me.id)))));
+    riskData = { soru, den, gor, odeme }; hakedis = hk;
   }
+  const risks = (st) => P.riskHesapla(st, { tasks: allTasks, ...riskData, unread });
 
   function shell() {
     const thisWeek = weekTasks(allTasks, monday());
@@ -308,18 +335,39 @@ async function CoachPanel(me) {
         <div class="stat"><div class="n">${thisWeek.length}</div><div class="l">Bu haftaki görev</div></div>
         <div class="stat"><div class="n" id="unTot">0</div><div class="l">Okunmamış mesaj</div></div>
       </div>
+      <div class="tabs" id="vTabs"><button data-v="ogr" class="${view === "ogr" ? "on" : ""}">Öğrencilerim</button><button data-v="takvim" class="${view === "takvim" ? "on" : ""}">Takvim</button><button data-v="kazanc" class="${view === "kazanc" ? "on" : ""}">Kazancım</button></div>
+      <div id="vBody"></div>`;
+    $$("#vTabs button").forEach((b) => (b.onclick = () => { view = b.dataset.v; shell(); }));
+    const vb = $("#vBody");
+    if (view === "takvim") { P.renderKocTakvim(vb, me, students); return; }
+    if (view === "kazanc") { drawKazanc(vb); return; }
+    const riskli = students.map((st) => [st, risks(st)]).filter(([, r]) => r.length).sort((a, b) => b[1].filter((x) => x[0] === "err").length - a[1].filter((x) => x[0] === "err").length);
+    vb.innerHTML = `${riskli.length ? `<div class="card risk-card" style="margin-bottom:1rem"><div class="spread"><h3 style="margin:0">⚠️ Dikkat gerektirenler</h3><span class="muted small">${riskli.length} öğrenci</span></div>
+        <div class="risk-grid">${riskli.map(([st, r]) => `<button class="risk-item" data-rs="${st.id}"><b>${esc(st.ad)}</b>${r.map(([lv, t]) => `<span class="badge ${lv}">${esc(t)}</span>`).join("")}</button>`).join("")}</div></div>` : ""}
       ${students.length ? `<div class="coach-layout"><div class="stu-list" id="stuList"></div><div id="detail"></div></div>`
         : `<div class="card empty">Henüz sana atanmış öğrenci yok. Eşleştirmeyi yönetici yapar.</div>`}`;
+    $$("[data-rs]", vb).forEach((b) => (b.onclick = () => { selId = b.dataset.rs; drawList(); drawDetail(); $("#detail").scrollIntoView({ behavior: "smooth" }); }));
     if (!students.length) return;
     if (!selId || !students.find((s) => s.id === selId)) selId = students[0].id;
     drawList(); drawDetail();
+  }
+
+  function drawKazanc(el) {
+    const list = [...hakedis].sort((a, b) => (b.ay || "").localeCompare(a.ay || ""));
+    const toplam = list.reduce((s, h) => s + (Number(h.tutar) || 0), 0), odenen = list.filter((h) => h.odendi).reduce((s, h) => s + (Number(h.tutar) || 0), 0);
+    const TL = (n) => (Number(n) || 0).toLocaleString("tr-TR") + " ₺";
+    el.innerHTML = `<div class="stats" style="grid-template-columns:repeat(3,1fr)"><div class="stat"><div class="n">${TL(toplam)}</div><div class="l">Toplam hakediş</div></div>
+        <div class="stat"><div class="n">${TL(odenen)}</div><div class="l">Ödenen</div></div><div class="stat"><div class="n">${TL(toplam - odenen)}</div><div class="l">Bekleyen</div></div></div>
+      <div class="card table-wrap">${list.length ? `<table><thead><tr><th>Ay</th><th>Öğrenci dönemi</th><th>Tutar</th><th>Durum</th></tr></thead><tbody>${list.map((h) => `<tr><td><b>${esc(h.ay)}</b></td><td>${h.donemSayisi || 0}</td><td>${TL(h.tutar)}</td><td>${h.odendi ? `<span class="badge ok">Ödendi</span>` : `<span class="badge warn">Bekliyor</span>`}</td></tr>`).join("")}</tbody></table>`
+        : `<div class="empty">Henüz hakediş kaydı yok. Hakedişler her ay yönetici tarafından hesaplanır.</div>`}</div>`;
   }
 
   function drawList() {
     const thisWeek = weekTasks(allTasks, monday());
     $("#stuList").innerHTML = students.map((s) => {
       const pct = completion(thisWeek.filter((t) => t.ogrenciId === s.id));
-      return `<button class="stu ${s.id === selId ? "on" : ""}" data-s="${s.id}"><b>${esc(s.ad)}${unread[s.id] ? ` <span class="badge err">${unread[s.id]}</span>` : ""}</b><span class="small">${esc(s.sinif || "")} · ${esc(ALANLAR[s.alan] || s.alan || "")}</span>
+      const rc = risks(s).length;
+      return `<button class="stu ${s.id === selId ? "on" : ""}" data-s="${s.id}"><b>${esc(s.ad)}${unread[s.id] ? ` <span class="badge err">${unread[s.id]}</span>` : ""}${rc ? ` <span class="badge warn" title="Dikkat gerektiren durum">⚠ ${rc}</span>` : ""}</b><span class="small">${esc(s.sinif || "")} · ${esc(ALANLAR[s.alan] || s.alan || "")}</span>
         <div class="progress"><i style="width:${pct}%"></i></div><span class="small">Bu hafta %${pct}</span></button>`;
     }).join("");
     $$("#stuList .stu").forEach((b) => b.addEventListener("click", () => { selId = b.dataset.s; drawList(); drawDetail(); }));
@@ -329,12 +377,17 @@ async function CoachPanel(me) {
     const st = students.find((s) => s.id === selId);
     const d = $("#detail");
     d.innerHTML = `<div class="card" style="margin-bottom:1rem"><div class="spread"><div><h3 style="margin:0">${esc(st.ad)}</h3>
-        <div class="muted small">${esc(st.sinif || "")} · ${esc(ALANLAR[st.alan] || "")}${st.hedef ? " · Hedef: " + esc(st.hedef) : ""}</div></div>
+        <div class="muted small">${esc(st.sinif || "")} · ${esc(ALANLAR[st.alan] || "")}${st.hedef ? " · Hedef: " + esc(st.hedef) : ""}</div>
+        <div class="small" style="margin-top:.4rem">🎯 Haftalık soru hedefi: <b id="hhVal">…</b> <button class="btn btn-ghost btn-sm" id="hhEdit" style="padding:.15rem .55rem">Düzenle</button></div></div>
         <div class="row">${st.telefon ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(st.telefon)}">Öğrenci WhatsApp</a>` : ""}
         ${st.veliTelefon ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(st.veliTelefon)}">Veli WhatsApp</a>` : ""}</div></div></div>
-      <div class="tabs" id="cTabs">${[["program", "Program"], ["konu", "Konular"], ["soru", "Soru & süre"], ["deneme", "Denemeler"], ["hata", "Hata defteri"], ["kaynak", "Kaynaklar"], ["mesaj", "Mesajlar"], ["gorusme", "Görüşmeler"]].map(([k, v]) => `<button data-t="${k}" class="${tab === k ? "on" : ""}">${v}${k === "mesaj" && unread[st.id] ? ` <span class="badge err">${unread[st.id]}</span>` : ""}</button>`).join("")}</div>
+      <div class="tabs" id="cTabs">${[["program", "Program"], ["dprog", "Ders programı"], ["konu", "Konular"], ["soru", "Soru & süre"], ["deneme", "Denemeler"], ["hata", "Hata defteri"], ["kaynak", "Kaynaklar"], ["mesaj", "Mesajlar"], ["gorusme", "Görüşmeler"]].map(([k, v]) => `<button data-t="${k}" class="${tab === k ? "on" : ""}">${v}${k === "mesaj" && unread[st.id] ? ` <span class="badge err">${unread[st.id]}</span>` : ""}</button>`).join("")}</div>
       <div id="cBody"></div>`;
     $$("#cTabs button").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.t; drawDetail(); }));
+    P.getKocAyar(st.id).then((a) => {
+      if ($("#hhVal")) $("#hhVal").textContent = a.haftalikSoruHedefi ? a.haftalikSoruHedefi.toLocaleString("tr-TR") + " soru" : "belirlenmedi";
+      if ($("#hhEdit")) $("#hhEdit").onclick = () => P.hedefModal(st, a.haftalikSoruHedefi, drawDetail);
+    });
     drawTab(st);
   }
 
@@ -348,7 +401,7 @@ async function CoachPanel(me) {
         body.innerHTML = `<div class="spread" style="margin-bottom:1rem">
             <div class="week-nav"><button class="btn btn-ghost btn-sm" id="prevW">←</button><b>${weekHeader(weekStart)}</b><button class="btn btn-ghost btn-sm" id="nextW">→</button></div>
             <div class="row"><span class="badge ${pct >= 80 ? "ok" : pct >= 50 ? "warn" : "gray"}">%${pct} tamamlandı</span>
-              <button class="btn btn-ghost btn-sm" id="copyW">Geçen haftayı kopyala</button><button class="btn btn-primary btn-sm" id="veliR">📝 Veli raporu hazırla</button><button class="btn btn-accent btn-sm" id="addT">+ Görev</button></div></div>
+              <button class="btn btn-ghost btn-sm" id="copyW">Geçen haftayı kopyala</button><button class="btn btn-ghost btn-sm" id="sbK">💾 Şablon kaydet</button><button class="btn btn-ghost btn-sm" id="sbU">📥 Şablon uygula</button><button class="btn btn-primary btn-sm" id="veliR">📝 Veli raporu</button><button class="btn btn-accent btn-sm" id="addT">+ Görev</button></div></div>
           <div id="weekEl"></div>`;
         renderWeek($("#weekEl"), list, weekStart, "koc");
         $("#prevW").onclick = () => { weekStart = addDays(weekStart, -7); drawTab(st); };
@@ -362,8 +415,12 @@ async function CoachPanel(me) {
         }));
         $("#copyW").onclick = () => copyLastWeek(st);
         $("#veliR").onclick = () => veliRaporu(st);
+        $("#sbK").onclick = () => P.sablonKaydet(me, list, weekStart);
+        $("#sbU").onclick = () => P.sablonUygula(me, st, weekStart, refresh);
+      } else if (tab === "dprog") {
+        await P.renderDersProgrami(body, st, { editable: true, kocId: me.id });
       } else if (tab === "konu") {
-        await P.renderKonular(body, st, { editable: false });
+        await konuGorunum(body, st, false);
       } else if (tab === "soru") {
         await P.renderSorular(body, st, { editable: false, kocId: me.id });
       } else if (tab === "mesaj") {
@@ -376,7 +433,8 @@ async function CoachPanel(me) {
         const list = docs(await getDocs(query(collection(db, "denemeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
         body.innerHTML = `<div id="hedefEl" style="margin-bottom:1rem"></div><div id="denEl"></div>`;
         await P.renderHedef($("#hedefEl"), st, list, { editable: false });
-        renderDenemeler($("#denEl"), list, { canDelete: false, editable: false, onAdd: () => denemeModal(st, me.id, () => drawTab(st)), onDelete: () => {} });
+        renderDenemeler($("#denEl"), list, { canDelete: false, editable: false, onAdd: () => denemeModal(st, me.id, () => drawTab(st)), onDelete: () => {},
+          onKonuEkle: (k) => taskModal(st, null, iso(addDays(new Date(), 1)), { ders: k.ders, konu: k.konu, tur: "konu", aciklama: "Deneme analizinde zayıf çıkan konu" }) });
       } else if (tab === "gorusme") {
         const list = docs(await getDocs(query(collection(db, "gorusmeler"), where("kocId", "==", me.id), where("ogrenciId", "==", st.id))));
         renderGorusmeler(body, list, { canAdd: true, onAdd: () => gorusmeModal(st) });
@@ -384,18 +442,19 @@ async function CoachPanel(me) {
     } catch (err) { console.error(err); body.innerHTML = `<div class="card empty">Yüklenemedi (${esc(err.code || "")}).</div>`; }
   }
 
-  function taskModal(st, t, defDate) {
+  function taskModal(st, t, defDate, pre = null) {
+    const v = t || pre || {};
     const m = openModal(`<h3>${t ? "Görevi düzenle" : "Yeni görev"} · ${esc(st.ad)}</h3>
       <div class="grid-2">
         <div class="field"><label>Tarih</label><input type="date" id="g_t" value="${t ? t.tarih : defDate}"/></div>
-        <div class="field"><label>Tür</label><select id="g_tur">${Object.entries(GOREV_TUR).map(([k, v]) => `<option value="${k}" ${t?.tur === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
+        <div class="field"><label>Tür</label><select id="g_tur">${Object.entries(GOREV_TUR).map(([k, v]) => `<option value="${k}" ${v.tur === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Ders</label><select id="g_ders">${DERS_LISTESI.map((x) => `<option ${t?.ders === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
-        <div class="field"><label>Hedef</label><input id="g_h" maxlength="60" placeholder="Örn. 40 soru / 90 dk" value="${esc(t?.hedef || "")}"/></div>
+        <div class="field"><label>Ders</label><select id="g_ders">${DERS_LISTESI.map((x) => `<option ${v.ders === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+        <div class="field"><label>Hedef</label><input id="g_h" maxlength="60" placeholder="Örn. 40 soru / 90 dk" value="${esc(v.hedef || "")}"/></div>
       </div>
-      <div class="field"><label>Konu</label><input id="g_k" maxlength="100" placeholder="Örn. Türev – zincir kuralı" value="${esc(t?.konu || "")}"/></div>
-      <div class="field"><label>Açıklama / kaynak</label><input id="g_a" maxlength="200" placeholder="Örn. 345 AYT Mat s. 120-135" value="${esc(t?.aciklama || "")}"/></div>
+      <div class="field"><label>Konu</label><input id="g_k" maxlength="100" placeholder="Örn. Türev – zincir kuralı" value="${esc(v.konu || "")}"/></div>
+      <div class="field"><label>Açıklama / kaynak</label><input id="g_a" maxlength="200" placeholder="Örn. 345 AYT Mat s. 120-135" value="${esc(v.aciklama || "")}"/></div>
       <div class="row">${!t ? `<label class="check" style="margin:0"><input type="checkbox" id="g_rep"/> Hafta boyunca her güne ekle</label>` : ""}
         <button class="btn btn-accent" id="g_save" style="margin-left:auto">Kaydet</button></div>`);
     $("#g_save", m.el).onclick = async (e) => {
@@ -537,6 +596,7 @@ async function CoachPanel(me) {
 
   try {
     await loadBase(); shell();
+    P.mountBildirim(me, "koc", { goTab: (t) => { if (t === "takvim") { view = "takvim"; shell(); } } });
     P.watchUnread({ me, asCoach: true }, (byStu) => {
       unread = byStu;
       const tot = Object.values(byStu).reduce((a, b) => a + b, 0);
